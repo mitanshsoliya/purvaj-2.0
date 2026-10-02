@@ -31,9 +31,22 @@ router.patch('/:id/read', notificationController.markNotificationRead);
 router.post('/:id/delivered', notificationController.acknowledgeDelivery);
 
 /**
+ * @route   GET /api/notifications/messages/logs
+ * @desc    Admin reviews WhatsApp & SMS delivery records
+ */
+router.get('/messages/logs', authorize('admin'), notificationController.getMessageLogs);
+
+/**
+ * @route   GET /api/notifications/messages/status
+ * @desc    Check system messaging & payment gateway configuration status
+ */
+router.get('/messages/status', authorize('admin'), notificationController.getMessagingStatus);
+
+/**
  * @route   GET /api/notifications/admin/all
  * @desc    Admin lists all system notifications
  */
 router.get('/admin/all', authorize('admin'), notificationController.listAllNotificationsAdmin);
 
 export default router;
+

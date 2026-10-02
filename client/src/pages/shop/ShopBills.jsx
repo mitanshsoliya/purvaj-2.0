@@ -11,7 +11,8 @@ import {
   Eye,
   Building2,
   X,
-  Receipt
+  Receipt,
+  CreditCard
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +20,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import PaymentModal from '../../components/payment/PaymentModal';
 
 export const ShopBills = () => {
   const { user } = useAuth();
@@ -37,7 +39,11 @@ export const ShopBills = () => {
   const [paymentReceipt, setPaymentReceipt] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
+  // Pay Bill modal
+  const [payingInvoice, setPayingInvoice] = useState(null);
+
   useEffect(() => {
+
     fetchInvoices();
   }, [statusFilter]);
 
@@ -209,8 +215,20 @@ export const ShopBills = () => {
                 </p>
               </div>
 
-              <div className="flex items-center justify-between sm:justify-end gap-3">
+              <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
                 {getPaymentStatusBadge(inv.status)}
+
+                {inv.status !== 'paid' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={CreditCard}
+                    onClick={() => setPayingInvoice(inv)}
+                    className="font-semibold text-xs shadow-sm"
+                  >
+                    Pay Bill
+                  </Button>
+                )}
 
                 <Button
                   variant="secondary"
@@ -539,6 +557,17 @@ export const ShopBills = () => {
           </div>
         )}
       </Modal>
+
+      {/* Pay Invoice Modal */}
+      <PaymentModal
+        isOpen={!!payingInvoice}
+        defaultInvoice={payingInvoice}
+        onClose={() => setPayingInvoice(null)}
+        onSuccess={() => {
+          setPayingInvoice(null);
+          fetchInvoices();
+        }}
+      />
     </div>
   );
 };

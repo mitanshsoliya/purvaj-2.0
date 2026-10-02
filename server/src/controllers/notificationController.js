@@ -278,10 +278,123 @@ export const listAllNotificationsAdmin = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/notifications/messages/logs
+ * Admin reviews WhatsApp & SMS delivery records, failure reasons, and status.
+ */
+export const getMessageLogs = async (req, res, next) => {
+  try {
+    const { channel, status, event_type, search, page = 1, limit = 25 } = req.query;
+    const offset = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const params = [];
+    const conditions = [];
+
+    if (channel && channel !== 'all') {
+      params.push(channel);
+      conditions.push(`ml.channel = $${params.length}`);
+    }
+
+    if (status && status !== 'all') {
+      params.push(status);
+      conditions.push(`ml.status = $${params.length}`);
+    }
+
+    if (event_type && event_type !== 'all') {
+      params.push(event_type);
+      conditions.push(`ml.event_type = $${params.length}`);
+    }
+
+    if (search && search.trim()) {
+      params.push(`%${search.trim()}%`);
+      const pIdx = params.length;
+      conditions.push(`(ml.recipient ILIKE $${pIdx} OR ml.content ILIKE $${pIdx} OR s.shop_name ILIKE $${pIdx})`);
+    }
+
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM message_logs ml LEFT JOIN shops s ON ml.shop_id = s.id ${whereClause}`,
+      params
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    params.push(parseInt(limit));
+    params.push(offset);
+
+    const query = `
+      SELECT 
+        ml.*,
+        s.shop_name,
+        o.order_number
+      FROM message_logs ml
+      LEFT JOIN shops s ON ml.shop_id = s.id
+      LEFT JOIN orders o ON ml.order_id = o.id
+      ${whereClause}
+      ORDER BY ml.created_at DESC
+      LIMIT $${params.length - 1} OFFSET $${params.length}
+    `;
+
+    const result = await pool.query(query, params);
+
+    return sendSuccess(res, {
+      data: {
+        logs: result.rows,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/notifications/messages/status
+ * Check configured WhatsApp, SMS, and Gateway provider architecture status.
+ */
+export const getMessagingStatus = async (req, res, next) => {
+  try {
+    const isWhatsAppConfigured = Boolean(process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN);
+    const isSmsConfigured = Boolean(process.env.SMS_AUTH_KEY);
+    const isPaymentConfigured = Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+
+    return sendSuccess(res, {
+      data: {
+        whatsapp: {
+          provider: isWhatsAppConfigured ? 'meta' : 'sandbox',
+          configured: isWhatsAppConfigured,
+          mode: isWhatsAppConfigured ? 'production' : 'development/sandbox',
+          sender: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || 'SANDBOX_WHATSAPP',
+        },
+        sms: {
+          provider: isSmsConfigured ? 'msg91' : 'sandbox',
+          configured: isSmsConfigured,
+          mode: isSmsConfigured ? 'production' : 'development/sandbox',
+          senderId: process.env.SMS_SENDER_ID || 'PURVAJ',
+        },
+        paymentGateway: {
+          provider: isPaymentConfigured ? 'razorpay' : 'sandbox',
+          configured: isPaymentConfigured,
+          mode: isPaymentConfigured ? 'production' : 'test/sandbox',
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   getMyNotifications,
   markNotificationRead,
   markAllRead,
   acknowledgeDelivery,
   listAllNotificationsAdmin,
+  getMessageLogs,
+  getMessagingStatus,
 };
+

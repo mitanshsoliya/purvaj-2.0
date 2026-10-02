@@ -19,6 +19,8 @@ const pool = connectionString
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
     })
   : new Pool({
       host: process.env.PG_HOST || 'localhost',
@@ -30,10 +32,19 @@ const pool = connectionString
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
     });
 
 pool.on('error', (err) => {
   console.error('[PostgreSQL/Supabase Pool Error]:', err.message);
+});
+
+// Suppress unhandled error events on individual pooled clients
+pool.on('connect', (client) => {
+  client.on('error', (err) => {
+    console.warn('[PostgreSQL Pooled Client Warning]:', err.message);
+  });
 });
 
 export const query = (text, params) => pool.query(text, params);

@@ -2,202 +2,150 @@ import React, { useState, useEffect } from 'react';
 import {
   BarChart3, Calendar, Download, Printer, RefreshCw, Filter,
   DollarSign, ShoppingCart, Store, Package, Warehouse,
-  TrendingUp, ArrowUpRight, ArrowDownRight, Layers, Percent
+  TrendingUp, ArrowUpRight, ArrowDownRight, Layers, Percent,
+  CreditCard, Truck, AlertCircle, FileText, CheckCircle2, XCircle
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import Input from '../../components/common/Input';
-import Select from '../../components/common/Select';
-import StatusBadge from '../../components/common/StatusBadge';
-import EmptyState from '../../components/common/EmptyState';
 import LoadingState from '../../components/common/LoadingState';
+import EmptyState from '../../components/common/EmptyState';
+import { useToast } from '../../context/ToastContext';
+
+const REPORT_TABS = [
+  { id: 'sales', label: '1. Sales Analytics' },
+  { id: 'payments', label: '2. Payment Collections' },
+  { id: 'outstanding', label: '3. Udhaar / Outstanding' },
+  { id: 'products', label: '4. Product Sales & Velocity' },
+  { id: 'inventory', label: '5. Central Warehouse Stock' },
+  { id: 'shops', label: '6. Shop Performance' },
+  { id: 'orders', label: '7. Order Lifecycle Pipeline' },
+];
+
+const DATE_RANGES = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last_7_days', label: 'Last 7 Days' },
+  { value: 'last_30_days', label: 'Last 30 Days' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Previous Month' },
+  { value: 'custom', label: 'Custom Date Range' },
+];
 
 export const AdminReports = () => {
-  const [reportType, setReportType] = useState('sales'); // 'sales' | 'products' | 'shops' | 'payments' | 'inventory' | 'profit'
-  const [dateRangeDays, setDateRangeDays] = useState('30');
+  const { addToast } = useToast();
+
+  const [activeTab, setActiveTab] = useState('sales');
+  const [dateRange, setDateRange] = useState('last_30_days');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Raw data from endpoints
-  const [salesData, setSalesData] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
-  const [shopPerformance, setShopPerformance] = useState([]);
-  const [inventoryValuation, setInventoryValuation] = useState(null);
-  const [paymentsList, setPaymentsList] = useState([]);
-  const [categories, setCategories] = useState([]);
+  // Report Specific States
+  const [salesReport, setSalesReport] = useState({ summary: {}, breakdown: [] });
+  const [paymentReport, setPaymentReport] = useState({ summary: {}, methodBreakdown: [], trend: [] });
+  const [outstandingReport, setOutstandingReport] = useState({ summary: {}, shops: [] });
+  const [productReport, setProductReport] = useState({ topProducts: [], slowMoving: [], categoryPerformance: [] });
+  const [inventoryReport, setInventoryReport] = useState({ summary: {}, lowStockItems: [] });
+  const [shopReport, setShopReport] = useState({ summary: {}, shops: [] });
+  const [orderReport, setOrderReport] = useState({ summary: {}, trend: [] });
 
-  // Filters
-  const [searchFilter, setSearchFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  useEffect(() => {
+    fetchActiveReport();
+  }, [activeTab, dateRange]);
 
-  const fetchReports = async () => {
+  const fetchActiveReport = async () => {
     setLoading(true);
     try {
-      const [salesRes, prodRes, shopRes, invRes, payRes, catRes] = await Promise.allSettled([
-        api.get(`/reports/sales?days=${dateRangeDays}`),
-        api.get('/reports/top-products?limit=25'),
-        api.get('/reports/shop-performance?limit=25'),
-        api.get('/reports/inventory-valuation'),
-        api.get('/payments?limit=100'),
-        api.get('/categories'),
-      ]);
-
-      if (salesRes.status === 'fulfilled' && salesRes.value.data?.data?.sales) {
-        setSalesData(salesRes.value.data.data.sales);
-      } else {
-        // Fallback sales
-        setSalesData([
-          { sale_date: '2026-10-02', total_orders: 4, total_revenue: 57280, total_subtotal: 51200, total_tax: 6080 },
-          { sale_date: '2026-10-01', total_orders: 6, total_revenue: 84500, total_subtotal: 75500, total_tax: 9000 },
-          { sale_date: '2026-09-30', total_orders: 5, total_revenue: 62100, total_subtotal: 55400, total_tax: 6700 },
-          { sale_date: '2026-09-29', total_orders: 8, total_revenue: 110400, total_subtotal: 98500, total_tax: 11900 },
-          { sale_date: '2026-09-28', total_orders: 3, total_revenue: 38900, total_subtotal: 34800, total_tax: 4100 },
-        ]);
+      const params = new URLSearchParams();
+      params.append('date_range', dateRange);
+      if (dateRange === 'custom') {
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
       }
 
-      if (prodRes.status === 'fulfilled' && prodRes.value.data?.data?.topProducts) {
-        setTopProducts(prodRes.value.data.data.topProducts);
-      } else {
-        setTopProducts([
-          { sku: 'OIL-FS-1L', product_name: 'Fortune Sunlite Refined Sunflower Oil 1L', total_quantity_sold: 280, total_revenue: 37800, order_appearances: 12, cost_price: 118.00, selling_price: 135.00 },
-          { sku: 'SALT-TATA-1KG', product_name: 'Tata Salt Vacuum Evaporated Iodized 1kg', total_quantity_sold: 550, total_revenue: 13475, order_appearances: 18, cost_price: 21.00, selling_price: 24.50 },
-          { sku: 'ATTA-AASH-10KG', product_name: 'Aashirvaad Shudh Chakki Atta 10kg Bag', total_quantity_sold: 95, total_revenue: 38950, order_appearances: 9, cost_price: 365.00, selling_price: 410.00 },
-          { sku: 'DET-SURF-1KG', product_name: 'Surf Excel Quick Wash Detergent 1kg', total_quantity_sold: 140, total_revenue: 19880, order_appearances: 7, cost_price: 125.00, selling_price: 142.00 },
-        ]);
-      }
-
-      if (shopRes.status === 'fulfilled' && shopRes.value.data?.data?.shopPerformance) {
-        setShopPerformance(shopRes.value.data.data.shopPerformance);
-      } else {
-        setShopPerformance([
-          { shop_name: 'Shree Krishna Traders', city: 'Ahmedabad', credit_limit: 150000, credit_used: 42500, total_orders: 14, lifetime_spend: 184500 },
-          { shop_name: 'Patel Supermarket', city: 'Surat', credit_limit: 200000, credit_used: 12000, total_orders: 22, lifetime_spend: 342000 },
-          { shop_name: 'Om Sai Kirana Store', city: 'Vadodara', credit_limit: 50000, credit_used: 0, total_orders: 3, lifetime_spend: 38500 },
-        ]);
-      }
-
-      if (invRes.status === 'fulfilled' && invRes.value.data?.data?.valuation) {
-        setInventoryValuation(invRes.value.data.data.valuation);
-      } else {
-        setInventoryValuation({
-          total_products: 4,
-          total_units_in_stock: 865,
-          total_reserved_units: 125,
-          total_selling_value: 110825,
-          total_purchase_value: 96420,
-        });
-      }
-
-      if (payRes.status === 'fulfilled' && payRes.value.data?.data?.payments) {
-        setPaymentsList(payRes.value.data.data.payments);
-      }
-
-      if (catRes.status === 'fulfilled' && catRes.value.data?.data?.categories) {
-        setCategories(catRes.value.data.data.categories);
+      if (activeTab === 'sales') {
+        const res = await api.get(`/reports/sales?${params.toString()}`);
+        if (res.data?.success && res.data?.data) setSalesReport(res.data.data);
+      } else if (activeTab === 'payments') {
+        const res = await api.get(`/reports/payments?${params.toString()}`);
+        if (res.data?.success && res.data?.data) setPaymentReport(res.data.data);
+      } else if (activeTab === 'outstanding') {
+        const res = await api.get('/reports/outstanding');
+        if (res.data?.success && res.data?.data) setOutstandingReport(res.data.data);
+      } else if (activeTab === 'products') {
+        const res = await api.get(`/reports/products?${params.toString()}`);
+        if (res.data?.success && res.data?.data) setProductReport(res.data.data);
+      } else if (activeTab === 'inventory') {
+        const res = await api.get('/reports/inventory');
+        if (res.data?.success && res.data?.data) setInventoryReport(res.data.data);
+      } else if (activeTab === 'shops') {
+        const res = await api.get(`/reports/shops?${params.toString()}`);
+        if (res.data?.success && res.data?.data) setShopReport(res.data.data);
+      } else if (activeTab === 'orders') {
+        const res = await api.get(`/reports/orders?${params.toString()}`);
+        if (res.data?.success && res.data?.data) setOrderReport(res.data.data);
       }
     } catch (err) {
-      console.warn('Reports error:', err);
+      console.error('Error fetching report:', err);
+      addToast('Failed to load report data from server', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchReports();
-  }, [dateRangeDays]);
-
-  // Export CSV Helper
-  const exportToCSV = () => {
-    let rows = [];
-    let filename = `purvaj_${reportType}_report_${new Date().toISOString().slice(0, 10)}.csv`;
-
-    if (reportType === 'sales') {
-      rows.push(['Date', 'Total Orders', 'Revenue (INR)', 'Subtotal (INR)', 'Tax (INR)']);
-      salesData.forEach((s) => {
-        rows.push([s.sale_date, s.total_orders, s.total_revenue, s.total_subtotal, s.total_tax]);
-      });
-    } else if (reportType === 'products' || reportType === 'profit') {
-      rows.push(['SKU', 'Product Name', 'Units Sold', 'Total Revenue', 'Est Gross Margin %']);
-      topProducts.forEach((p) => {
-        const cost = p.cost_price || (p.total_revenue * 0.88);
-        const margin = p.total_revenue > 0 ? (((p.total_revenue - cost) / p.total_revenue) * 100).toFixed(1) : '12.0';
-        rows.push([p.sku, `"${p.product_name}"`, p.total_quantity_sold, p.total_revenue, `${margin}%`]);
-      });
-    } else if (reportType === 'shops') {
-      rows.push(['Shop Name', 'City', 'Total Orders', 'Lifetime Spend (INR)', 'Credit Limit', 'Credit Used (Udhaar)']);
-      shopPerformance.forEach((s) => {
-        rows.push([`"${s.shop_name}"`, s.city, s.total_orders, s.lifetime_spend, s.credit_limit, s.credit_used]);
-      });
-    } else if (reportType === 'payments') {
-      rows.push(['Payment Date', 'Shop Name', 'Amount (INR)', 'Method', 'Reference UTR']);
-      paymentsList.forEach((p) => {
-        rows.push([p.payment_date || p.created_at, `"${p.shop_name}"`, p.amount, p.method, p.transaction_reference]);
-      });
-    } else if (reportType === 'inventory') {
-      rows.push(['Metric', 'Value']);
-      rows.push(['Total Active SKUs', inventoryValuation?.total_products || 0]);
-      rows.push(['Total Warehouse Units', inventoryValuation?.total_units_in_stock || 0]);
-      rows.push(['Stock Valuation at Selling Price', inventoryValuation?.total_selling_value || 0]);
-      rows.push(['Stock Valuation at Purchase Cost', inventoryValuation?.total_purchase_value || 0]);
+  const handleExportCsv = () => {
+    const params = new URLSearchParams();
+    params.append('type', activeTab);
+    params.append('date_range', dateRange);
+    if (dateRange === 'custom') {
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
     }
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const token = localStorage.getItem('purvaj_auth_token') || localStorage.getItem('token');
+    window.open(`/api/reports/export?${params.toString()}&token=${encodeURIComponent(token || '')}`, '_blank');
   };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // High level aggregated stats
-  const totalSalesRevenue = salesData.reduce((sum, s) => sum + (parseFloat(s.total_revenue) || 0), 0);
-  const totalOrdersCount = salesData.reduce((sum, s) => sum + (parseInt(s.total_orders) || 0), 0);
-  const totalWholesaleUdhaar = shopPerformance.reduce((sum, s) => sum + (parseFloat(s.credit_used) || 0), 0);
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Actions */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-            <BarChart3 className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-            Wholesale Intelligence & Reports
+            <BarChart3 className="w-7 h-7 text-brand-600 dark:text-brand-400" />
+            Advanced Business Analytics & Reports
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Data insights on sales velocity, product gross margins, retailer credit aging, and warehouse inventory valuation.
+            Server-side financial truth, sales auditing, credit utilization, and stock valuation
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2.5 flex-wrap">
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchReports}
-            disabled={loading}
+            onClick={fetchActiveReport}
             className="flex items-center gap-1.5"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+
           <Button
             variant="outline"
             size="sm"
-            onClick={handlePrint}
+            onClick={() => window.print()}
             className="flex items-center gap-1.5"
           >
             <Printer className="w-4 h-4" />
             Print
           </Button>
+
           <Button
             variant="primary"
             size="sm"
-            onClick={exportToCSV}
-            className="flex items-center gap-1.5"
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 shadow-sm"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -205,390 +153,587 @@ export const AdminReports = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Period Sales</span>
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            ₹{totalSalesRevenue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Across last {dateRangeDays} days</div>
-        </Card>
-
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Orders Fulfilled</span>
-            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-              <ShoppingCart className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{totalOrdersCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Wholesale bulk consignments</div>
-        </Card>
-
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Outstanding Udhaar</span>
-            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
-              <Store className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
-            ₹{totalWholesaleUdhaar.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Retailer network credit used</div>
-        </Card>
-
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Stock Valuation</span>
-            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
-              <Warehouse className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">
-            ₹{parseFloat(inventoryValuation?.total_selling_value || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Central warehouse stock</div>
-        </Card>
-      </div>
-
-      {/* Report Type Selector Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-        <div className="flex gap-2 min-w-max pb-2">
-          {[
-            { key: 'sales', label: 'Sales Revenue Report' },
-            { key: 'products', label: 'Product Performance Report' },
-            { key: 'shops', label: 'Retailer & Udhaar Report' },
-            { key: 'profit', label: 'Gross Margin & Profit Report' },
-            { key: 'payments', label: 'Payment Collection Report' },
-            { key: 'inventory', label: 'Inventory Valuation Report' },
-          ].map((item) => (
-            <button
-              key={item.key}
-              onClick={() => setReportType(item.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                reportType === item.key
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Date & Filter Toolbar */}
-      <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div className="sm:col-span-2">
-            <input
-              type="text"
-              placeholder="Search in report..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
+      {/* Date Range & Preset Filtering Bar */}
+      <Card className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px] shrink-0">
+              Period Preset:
+            </span>
             <select
-              value={dateRangeDays}
-              onChange={(e) => setDateRangeDays(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold focus:outline-none"
             >
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days (Quarter)</option>
-              <option value="365">Last 365 Days (Annual)</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="all">All Product Categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+              {DATE_RANGES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
               ))}
             </select>
           </div>
+
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              />
+              <span className="text-slate-400">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              />
+              <Button variant="secondary" size="sm" onClick={fetchActiveReport}>
+                Filter
+              </Button>
+            </div>
+          )}
+
+          <div className="text-[11px] text-slate-400">
+            * All financial totals calculated directly from verified database ledgers.
+          </div>
         </div>
       </Card>
 
-      {/* REPORT CONTENT TABLES */}
-      <Card className="overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        {loading ? (
-          <div className="p-12">
-            <LoadingState message="Generating wholesale reports and aggregating metrics..." />
-          </div>
-        ) : (
-          <div>
-            {/* 1. SALES REPORT */}
-            {reportType === 'sales' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="py-3.5 px-4">Date</th>
-                      <th className="py-3.5 px-4 text-center">Orders Fulfilled</th>
-                      <th className="py-3.5 px-4 text-right">Items Subtotal (₹)</th>
-                      <th className="py-3.5 px-4 text-right">GST Tax (₹)</th>
-                      <th className="py-3.5 px-4 text-right">Gross Sales Revenue (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {salesData.map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                          {new Date(row.sale_date).toLocaleDateString('en-IN', {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
-                            {row.total_orders} orders
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right text-slate-600 dark:text-slate-300">
-                          ₹{parseFloat(row.total_subtotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3.5 px-4 text-right text-slate-600 dark:text-slate-300">
-                          ₹{parseFloat(row.total_tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                          ₹{parseFloat(row.total_revenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar gap-1.5">
+        {REPORT_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`py-2.5 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === tab.id
+                ? 'border-brand-600 text-brand-600 dark:text-brand-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* REPORT CONTENT BODY */}
+      {loading ? (
+        <Card className="p-12">
+          <LoadingState message="Compiling verified report data..." />
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {/* 1. SALES REPORT */}
+          {activeTab === 'sales' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Gross Sales</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white mt-1 block">
+                    ₹{parseFloat(salesReport.summary?.gross_sales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">{salesReport.summary?.total_orders || 0} Total Orders</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider block">Net Delivered Sales</span>
+                  <span className="text-xl font-bold text-emerald-600 mt-1 block">
+                    ₹{parseFloat(salesReport.summary?.net_sales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Delivered & Realized</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wider block">Average Order Value (AOV)</span>
+                  <span className="text-xl font-bold text-blue-600 mt-1 block">
+                    ₹{parseFloat(salesReport.summary?.average_order_value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Per wholesale transaction</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-rose-500 uppercase tracking-wider block">Cancelled Orders</span>
+                  <span className="text-xl font-bold text-rose-600 mt-1 block">
+                    {salesReport.summary?.cancelled_orders || 0}
+                  </span>
+                  <span className="text-[11px] text-rose-500">₹{parseFloat(salesReport.summary?.cancelled_amount || 0).toLocaleString('en-IN')}</span>
+                </Card>
               </div>
-            )}
 
-            {/* 2. PRODUCT PERFORMANCE */}
-            {reportType === 'products' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="py-3.5 px-4">Product Name & SKU</th>
-                      <th className="py-3.5 px-4 text-center">Units Sold</th>
-                      <th className="py-3.5 px-4 text-center">Order Frequency</th>
-                      <th className="py-3.5 px-4 text-right">Total Revenue (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {topProducts.map((p, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-900 dark:text-white">{p.product_name}</div>
-                          <div className="text-xs text-slate-400">SKU: {p.sku}</div>
-                        </td>
-                        <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
-                          {p.total_quantity_sold} units
-                        </td>
-                        <td className="py-3.5 px-4 text-center text-xs text-slate-500">
-                          Appeared in {p.order_appearances || 1} orders
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                          ₹{parseFloat(p.total_revenue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
+              <Card title="Sales Daily Volume Breakdown">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                        <th className="pb-2.5 font-semibold">Date</th>
+                        <th className="pb-2.5 font-semibold text-right">Orders Placed</th>
+                        <th className="pb-2.5 font-semibold text-right">Gross Volume</th>
+                        <th className="pb-2.5 font-semibold text-right">Delivered Volume</th>
+                        <th className="pb-2.5 font-semibold text-right">Cancelled</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {(salesReport.breakdown || []).map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="py-2.5 font-medium text-slate-900 dark:text-white">
+                            {new Date(row.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="py-2.5 text-right font-bold text-slate-900 dark:text-white">{row.orders_count}</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900 dark:text-white">
+                            ₹{parseFloat(row.revenue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 text-right font-semibold text-emerald-600">
+                            ₹{parseFloat(row.delivered_revenue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 text-right text-rose-500 font-semibold">{row.cancelled_count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
 
-            {/* 3. SHOPS & UDHAAR PERFORMANCE */}
-            {reportType === 'shops' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="py-3.5 px-4">Retail Shop & City</th>
-                      <th className="py-3.5 px-4 text-center">Total Orders</th>
-                      <th className="py-3.5 px-4 text-right">Credit Limit (₹)</th>
-                      <th className="py-3.5 px-4 text-right">Outstanding (Udhaar) (₹)</th>
-                      <th className="py-3.5 px-4 text-right">Lifetime Spend (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {shopPerformance.map((s, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
-                            <Store className="w-3.5 h-3.5 text-indigo-500" />
-                            {s.shop_name}
-                          </div>
-                          <div className="text-xs text-slate-400">{s.city || 'Gujarat'}</div>
-                        </td>
-                        <td className="py-3.5 px-4 text-center font-medium">
-                          {s.total_orders}
-                        </td>
-                        <td className="py-3.5 px-4 text-right text-slate-600 dark:text-slate-300">
-                          ₹{parseFloat(s.credit_limit || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-purple-600 dark:text-purple-400">
-                          ₹{parseFloat(s.credit_used || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                          ₹{parseFloat(s.lifetime_spend || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
+          {/* 2. PAYMENT REPORT */}
+          {activeTab === 'payments' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider block">Total Collections</span>
+                  <span className="text-xl font-bold text-emerald-600 mt-1 block">
+                    ₹{parseFloat(paymentReport.summary?.total_collected || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">{paymentReport.summary?.total_transactions || 0} Transactions</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-brand-500 uppercase tracking-wider block">Online Gateway</span>
+                  <span className="text-xl font-bold text-brand-600 mt-1 block">
+                    ₹{parseFloat(paymentReport.summary?.online_payments || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Cards, UPI & NetBanking</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wider block">Bank Transfers / NEFT</span>
+                  <span className="text-xl font-bold text-blue-600 mt-1 block">
+                    ₹{parseFloat(paymentReport.summary?.bank_upi_payments || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Direct warehouse account credit</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block">Cash at Desk</span>
+                  <span className="text-xl font-bold text-amber-600 mt-1 block">
+                    ₹{parseFloat(paymentReport.summary?.cash_payments || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Physical receipt vouchers</span>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card title="Settlement Breakdown by Channel">
+                  <div className="space-y-3">
+                    {(paymentReport.methodBreakdown || []).map((m, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-xs">
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-white uppercase">{m.method?.replace('_', ' ')}</span>
+                          <span className="text-slate-400 block text-[11px]">{m.count} payments</span>
+                        </div>
+                        <span className="text-sm font-bold text-emerald-600">
+                          ₹{parseFloat(m.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <Card title="Daily Collection Timeline">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {(paymentReport.trend || []).map((t, idx) => (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 text-xs">
+                        <span className="text-slate-600 dark:text-slate-300">
+                          {new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </span>
+                        <span className="font-bold text-emerald-600">
+                          ₹{parseFloat(t.collected_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* 3. OUTSTANDING REPORT */}
+          {activeTab === 'outstanding' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-purple-500 uppercase tracking-wider block">Total Outstanding Udhaar</span>
+                  <span className="text-xl font-bold text-purple-600 mt-1 block">
+                    ₹{parseFloat(outstandingReport.summary?.total_outstanding || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Total receivables across network</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Credit Limit</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white mt-1 block">
+                    ₹{parseFloat(outstandingReport.summary?.total_credit_limit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">{outstandingReport.summary?.total_shops || 0} Registered Shops</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider block">Available Network Credit</span>
+                  <span className="text-xl font-bold text-emerald-600 mt-1 block">
+                    ₹{parseFloat(outstandingReport.summary?.available_credit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Remaining limit for new orders</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block">Credit Utilization</span>
+                  <span className="text-xl font-bold text-amber-600 mt-1 block">
+                    {outstandingReport.summary?.avg_utilization_pct || 0}%
+                  </span>
+                  <span className="text-[11px] text-slate-400">{outstandingReport.summary?.shops_with_dues || 0} Shops with active dues</span>
+                </Card>
+              </div>
+
+              <Card title="Shop-Wise Outstanding Ledger Balance">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                        <th className="pb-2.5 font-semibold">Shop Name</th>
+                        <th className="pb-2.5 font-semibold">City & Contact</th>
+                        <th className="pb-2.5 font-semibold text-right">Credit Limit</th>
+                        <th className="pb-2.5 font-semibold text-right">Current Udhaar</th>
+                        <th className="pb-2.5 font-semibold text-right">Utilization</th>
+                        <th className="pb-2.5 font-semibold text-right">Available</th>
+                        <th className="pb-2.5 font-semibold">Last Paid Date</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* 4. PROFIT & GROSS MARGIN */}
-            {reportType === 'profit' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="py-3.5 px-4">Product Name</th>
-                      <th className="py-3.5 px-4 text-right">Wholesale Revenue (₹)</th>
-                      <th className="py-3.5 px-4 text-right">Est. Cost of Goods (₹)</th>
-                      <th className="py-3.5 px-4 text-right">Gross Profit (₹)</th>
-                      <th className="py-3.5 px-4 text-center">Gross Margin %</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {topProducts.map((p, i) => {
-                      const rev = parseFloat(p.total_revenue) || 0;
-                      const cost = rev * 0.86; // Wholesale benchmark ~14% gross margin
-                      const profit = rev - cost;
-                      const margin = rev > 0 ? ((profit / rev) * 100).toFixed(1) : '14.0';
-
-                      return (
-                        <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                          <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                            {p.product_name}
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {(outstandingReport.shops || []).map((s) => (
+                        <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="py-2.5 font-bold text-slate-900 dark:text-white">{s.shop_name}</td>
+                          <td className="py-2.5 text-slate-500">{s.city} • {s.mobile}</td>
+                          <td className="py-2.5 text-right font-medium text-slate-700 dark:text-slate-300">
+                            ₹{parseFloat(s.credit_limit).toLocaleString('en-IN')}
                           </td>
-                          <td className="py-3.5 px-4 text-right">
-                            ₹{rev.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          <td className="py-2.5 text-right font-bold text-purple-600">
+                            ₹{parseFloat(s.outstanding_balance).toLocaleString('en-IN')}
                           </td>
-                          <td className="py-3.5 px-4 text-right text-slate-500">
-                            ₹{cost.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          <td className="py-2.5 text-right font-semibold text-amber-600">
+                            {s.utilization_pct}%
                           </td>
-                          <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                            ₹{profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          <td className="py-2.5 text-right font-bold text-emerald-600">
+                            ₹{parseFloat(s.available_credit).toLocaleString('en-IN')}
                           </td>
-                          <td className="py-3.5 px-4 text-center font-bold text-indigo-600 dark:text-indigo-400">
-                            {margin}%
+                          <td className="py-2.5 text-slate-500">
+                            {s.last_payment_date ? new Date(s.last_payment_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Never'}
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
 
-            {/* 5. PAYMENTS COLLECTIONS */}
-            {reportType === 'payments' && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="py-3.5 px-4">Date</th>
-                      <th className="py-3.5 px-4">Retail Shop</th>
-                      <th className="py-3.5 px-4">Payment Method</th>
-                      <th className="py-3.5 px-4">Reference / UTR</th>
-                      <th className="py-3.5 px-4 text-right">Collected Amount (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {paymentsList.map((p, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                        <td className="py-3.5 px-4 text-slate-500">
-                          {new Date(p.payment_date || p.created_at).toLocaleDateString('en-IN')}
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                          {p.shop_name}
-                        </td>
-                        <td className="py-3.5 px-4 uppercase text-xs">
-                          {p.method?.replace('_', ' ')}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-xs text-slate-500">
-                          {p.transaction_reference || 'N/A'}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                          ₹{parseFloat(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
+          {/* 4. PRODUCT REPORT */}
+          {activeTab === 'products' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card title="Top-Selling Wholesale Products">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {(productReport.topProducts || []).map((p, idx) => (
+                      <div key={idx} className="py-3 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{p.product_name}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            SKU: {p.sku} • Category: {p.category_name || 'General'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-brand-600 dark:text-brand-400">
+                            ₹{parseFloat(p.total_revenue).toLocaleString('en-IN')}
+                          </p>
+                          <span className="text-[11px] text-slate-500 font-semibold">{p.total_units_sold} units</span>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* 6. INVENTORY VALUATION */}
-            {reportType === 'inventory' && (
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Warehouse Stock Accounting</h3>
-                    <div className="text-xs space-y-2">
-                      <div className="flex justify-between text-slate-500">
-                        <span>Total Catalog SKUs Tracked:</span>
-                        <span className="font-bold text-slate-900 dark:text-white">{inventoryValuation?.total_products || 0}</span>
-                      </div>
-                      <div className="flex justify-between text-slate-500">
-                        <span>Physical Warehouse Units:</span>
-                        <span className="font-bold text-slate-900 dark:text-white">{inventoryValuation?.total_units_in_stock || 0}</span>
-                      </div>
-                      <div className="flex justify-between text-slate-500">
-                        <span>Reserved for Confirmed Orders:</span>
-                        <span className="font-bold text-amber-600">{inventoryValuation?.total_reserved_units || 0}</span>
-                      </div>
-                    </div>
                   </div>
+                </Card>
 
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Valuation Metrics</h3>
-                    <div className="text-xs space-y-2">
-                      <div className="flex justify-between text-slate-500">
-                        <span>Valuation at Selling Price:</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                          ₹{parseFloat(inventoryValuation?.total_selling_value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
+                <Card title="Slow-Moving / Low Stock Velocity">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {(productReport.slowMoving || []).map((p, idx) => (
+                      <div key={idx} className="py-3 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{p.product_name}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">SKU: {p.sku}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                            {p.current_stock} Units in Hub
+                          </span>
+                          <span className="block text-[10px] text-slate-400 mt-0.5">{p.units_sold} sold in period</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-slate-500">
-                        <span>Estimated Inventory Cost Value:</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-sm">
-                          ₹{parseFloat(inventoryValuation?.total_purchase_value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-slate-500">
-                        <span>Potential Warehouse Margin:</span>
-                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                          ₹{(parseFloat(inventoryValuation?.total_selling_value || 0) - parseFloat(inventoryValuation?.total_purchase_value || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+
+              <Card title="Category Revenue Performance">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                        <th className="pb-2.5 font-semibold">Category Name</th>
+                        <th className="pb-2.5 font-semibold text-right">Products Count</th>
+                        <th className="pb-2.5 font-semibold text-right">Units Ordered</th>
+                        <th className="pb-2.5 font-semibold text-right">Total Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {(productReport.categoryPerformance || []).map((c) => (
+                        <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="py-2.5 font-bold text-slate-900 dark:text-white">{c.category_name}</td>
+                          <td className="py-2.5 text-right font-medium text-slate-700 dark:text-slate-300">{c.product_count}</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900 dark:text-white">{c.units_sold}</td>
+                          <td className="py-2.5 text-right font-bold text-brand-600">
+                            ₹{parseFloat(c.category_revenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* 5. INVENTORY REPORT */}
+          {activeTab === 'inventory' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Central Stock Value (Selling)</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white mt-1 block">
+                    ₹{parseFloat(inventoryReport.summary?.total_retail_value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">{inventoryReport.summary?.total_stock_units || 0} Total Units</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wider block">Stock Valuation (Cost)</span>
+                  <span className="text-xl font-bold text-blue-600 mt-1 block">
+                    ₹{parseFloat(inventoryReport.summary?.total_cost_value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Central purchase investment</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block">Low Stock Alerts</span>
+                  <span className="text-xl font-bold text-amber-600 mt-1 block">
+                    {inventoryReport.summary?.low_stock_count || 0}
+                  </span>
+                  <span className="text-[11px] text-amber-600">Reorder threshold breached</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-rose-500 uppercase tracking-wider block">Out of Stock Items</span>
+                  <span className="text-xl font-bold text-rose-600 mt-1 block">
+                    {inventoryReport.summary?.out_of_stock_count || 0}
+                  </span>
+                  <span className="text-[11px] text-rose-500">Requires PO generation</span>
+                </Card>
+              </div>
+
+              <Card title="Low Stock Central Hub Manifest">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                        <th className="pb-2.5 font-semibold">SKU</th>
+                        <th className="pb-2.5 font-semibold">Product Name</th>
+                        <th className="pb-2.5 font-semibold">Category</th>
+                        <th className="pb-2.5 font-semibold text-right">Available Stock</th>
+                        <th className="pb-2.5 font-semibold text-right">Min Threshold</th>
+                        <th className="pb-2.5 font-semibold text-right">Unit Cost (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {(inventoryReport.lowStockItems || []).map((item) => (
+                        <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="py-2.5 font-mono font-bold text-brand-600">{item.sku}</td>
+                          <td className="py-2.5 font-semibold text-slate-900 dark:text-white">{item.name}</td>
+                          <td className="py-2.5 text-slate-500">{item.category_name}</td>
+                          <td className="py-2.5 text-right font-bold text-rose-600">{item.current_stock}</td>
+                          <td className="py-2.5 text-right text-slate-500">{item.minimum_stock}</td>
+                          <td className="py-2.5 text-right font-medium">₹{parseFloat(item.purchase_price).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* 6. SHOP REPORT */}
+          {activeTab === 'shops' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Active Retailers</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white mt-1 block">
+                    {shopReport.summary?.active_shops || 0}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Of {shopReport.summary?.total_shops || 0} Total Network Shops</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-brand-500 uppercase tracking-wider block">New Shops in Period</span>
+                  <span className="text-xl font-bold text-brand-600 mt-1 block">
+                    {shopReport.summary?.new_shops_in_period || 0}
+                  </span>
+                  <span className="text-[11px] text-brand-500">Onboarded during filter range</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider block">Active Order Network</span>
+                  <span className="text-xl font-bold text-emerald-600 mt-1 block">
+                    {(shopReport.shops || []).length}
+                  </span>
+                  <span className="text-[11px] text-slate-400">Stores ordering in this window</span>
+                </Card>
+              </div>
+
+              <Card title="Retailer Order & Revenue Performance">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                        <th className="pb-2.5 font-semibold">Shop Name</th>
+                        <th className="pb-2.5 font-semibold">City & Contact</th>
+                        <th className="pb-2.5 font-semibold text-right">Orders</th>
+                        <th className="pb-2.5 font-semibold text-right">Revenue (₹)</th>
+                        <th className="pb-2.5 font-semibold text-right">Collections Realized</th>
+                        <th className="pb-2.5 font-semibold text-right">Current Udhaar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {(shopReport.shops || []).map((s) => (
+                        <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="py-2.5 font-bold text-slate-900 dark:text-white">{s.shop_name}</td>
+                          <td className="py-2.5 text-slate-500">{s.city} • {s.mobile}</td>
+                          <td className="py-2.5 text-right font-semibold text-slate-900 dark:text-white">{s.period_orders}</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900 dark:text-white">
+                            ₹{parseFloat(s.period_revenue).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 text-right font-bold text-emerald-600">
+                            ₹{parseFloat(s.period_paid).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 text-right font-bold text-purple-600">
+                            ₹{parseFloat(s.outstanding).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* 7. ORDER REPORT */}
+          {activeTab === 'orders' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Pipeline Orders</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white mt-1 block">
+                    {orderReport.summary?.total_orders || 0}
+                  </span>
+                  <span className="text-[11px] text-slate-400">₹{parseFloat(orderReport.summary?.total_value || 0).toLocaleString('en-IN')} Total Value</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider block">Pending & Processing</span>
+                  <span className="text-xl font-bold text-amber-600 mt-1 block">
+                    {(orderReport.summary?.pending || 0) + (orderReport.summary?.confirmed || 0) + (orderReport.summary?.processing || 0)}
+                  </span>
+                  <span className="text-[11px] text-slate-400">In central warehouse fulfillment</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-brand-500 uppercase tracking-wider block">Out for Delivery</span>
+                  <span className="text-xl font-bold text-brand-600 mt-1 block">
+                    {orderReport.summary?.out_for_delivery || 0}
+                  </span>
+                  <span className="text-[11px] text-brand-500">In transit vehicles</span>
+                </Card>
+
+                <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider block">Delivered Orders</span>
+                  <span className="text-xl font-bold text-emerald-600 mt-1 block">
+                    {orderReport.summary?.delivered || 0}
+                  </span>
+                  <span className="text-[11px] text-emerald-600">Successfully handed over</span>
+                </Card>
+              </div>
+
+              <Card title="Fulfillment Lifecycle Pipeline Distribution">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-center text-xs">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Pending</span>
+                    <span className="text-lg font-bold text-slate-700 dark:text-slate-300 mt-1 block">{orderReport.summary?.pending || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/40">
+                    <span className="text-[10px] text-blue-500 uppercase font-bold block">Confirmed</span>
+                    <span className="text-lg font-bold text-blue-600 mt-1 block">{orderReport.summary?.confirmed || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40">
+                    <span className="text-[10px] text-amber-500 uppercase font-bold block">Processing</span>
+                    <span className="text-lg font-bold text-amber-600 mt-1 block">{orderReport.summary?.processing || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800/40">
+                    <span className="text-[10px] text-cyan-500 uppercase font-bold block">Packed</span>
+                    <span className="text-lg font-bold text-cyan-600 mt-1 block">{orderReport.summary?.packed || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800/40">
+                    <span className="text-[10px] text-brand-500 uppercase font-bold block">Dispatched</span>
+                    <span className="text-lg font-bold text-brand-600 mt-1 block">{orderReport.summary?.out_for_delivery || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40">
+                    <span className="text-[10px] text-emerald-500 uppercase font-bold block">Delivered</span>
+                    <span className="text-lg font-bold text-emerald-600 mt-1 block">{orderReport.summary?.delivered || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40">
+                    <span className="text-[10px] text-rose-500 uppercase font-bold block">Cancelled</span>
+                    <span className="text-lg font-bold text-rose-600 mt-1 block">{orderReport.summary?.cancelled || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/40">
+                    <span className="text-[10px] text-purple-500 uppercase font-bold block">Returned</span>
+                    <span className="text-lg font-bold text-purple-600 mt-1 block">{orderReport.summary?.returned || 0}</span>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
+              </Card>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

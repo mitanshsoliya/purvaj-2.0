@@ -70,10 +70,11 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Always fetch fresh user data from DB — never trust JWT payload alone for sensitive fields
+    const targetUserId = decoded.userId || decoded.id;
     const userResult = await pool.query(
       `SELECT u.id, u.name, u.email, u.mobile, u.role, u.is_active, u.avatar_url
        FROM users u WHERE u.id = $1`,
-      [decoded.userId]
+      [targetUserId]
     );
 
     if (userResult.rows.length === 0) {

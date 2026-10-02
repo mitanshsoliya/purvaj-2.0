@@ -24,4 +24,17 @@ router.put('/profile', shopController.updateMyShop);
  */
 router.get('/ledger', shopController.getShopLedger);
 
+/**
+ * @route   GET /api/shops/notification-preferences
+ * @desc    View shop notification preferences (WhatsApp, SMS, In-App)
+ */
+router.get('/notification-preferences', shopController.getNotificationPreferences);
+
+/**
+ * @route   PUT /api/shops/notification-preferences
+ * @desc    Update notification channels and preferences
+ */
+router.put('/notification-preferences', shopController.updateNotificationPreferences);
+
 export default router;
+

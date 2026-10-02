@@ -259,6 +259,15 @@ app.use(notFoundHandler);
 // Centralized Error Handler (Zod, JWT, DB, AppError)
 app.use(errorHandler);
 
+// Process-level safety against transient socket disconnects
+process.on('unhandledRejection', (reason, promise) => {
+  console.warn('[Server Warning]: Unhandled Rejection:', reason?.message || reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.warn('[Server Warning]: Uncaught Exception:', err.message);
+});
+
 // Start Server if directly executed
 if (process.env.NODE_ENV !== 'test') {
   server.listen(PORT, () => {

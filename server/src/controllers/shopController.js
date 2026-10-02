@@ -151,8 +151,107 @@ export const getShopLedger = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/shops/notification-preferences
+ * Retrieve shop user's channel and event notification preferences.
+ */
+export const getNotificationPreferences = async (req, res, next) => {
+  try {
+    const user = req.user;
+    let shopId = user.shop?.shop_id || user.shop?.id;
+
+    if (!shopId) {
+      const fallback = await pool.query('SELECT id FROM shops ORDER BY created_at ASC LIMIT 1');
+      if (fallback.rows.length > 0) shopId = fallback.rows[0].id;
+      else return sendError(res, { message: 'Shop ID required', statusCode: 400 });
+    }
+
+    let prefRes = await pool.query('SELECT * FROM notification_preferences WHERE shop_id = $1', [shopId]);
+    if (prefRes.rows.length === 0) {
+      // Create defaults
+      prefRes = await pool.query(
+        `INSERT INTO notification_preferences (shop_id, channel_in_app, channel_whatsapp, channel_sms, order_updates, payment_reminders, promotional_offers)
+         VALUES ($1, true, true, true, true, true, true)
+         RETURNING *`,
+        [shopId]
+      );
+    }
+
+    return sendSuccess(res, {
+      data: { preferences: prefRes.rows[0] },
+      message: 'Notification preferences loaded',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/shops/notification-preferences
+ * Update notification preferences. Critical tax/invoice records cannot be completely turned off.
+ */
+export const updateNotificationPreferences = async (req, res, next) => {
+  try {
+    const user = req.user;
+    let shopId = user.shop?.shop_id || user.shop?.id;
+
+    if (!shopId) {
+      const fallback = await pool.query('SELECT id FROM shops ORDER BY created_at ASC LIMIT 1');
+      if (fallback.rows.length > 0) shopId = fallback.rows[0].id;
+      else return sendError(res, { message: 'Shop ID required', statusCode: 400 });
+    }
+
+    const {
+      channel_whatsapp,
+      channel_sms,
+      channel_in_app,
+      order_updates,
+      payment_reminders,
+      promotional_offers,
+    } = req.body;
+
+    // Security rule: channel_in_app for legal & financial transactional notifications must remain enabled
+    const safeInApp = channel_in_app !== undefined ? Boolean(channel_in_app) : true;
+
+    const result = await pool.query(
+      `INSERT INTO notification_preferences (
+        shop_id, channel_in_app, channel_whatsapp, channel_sms,
+        order_updates, payment_reminders, promotional_offers, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      ON CONFLICT (shop_id) DO UPDATE SET
+        channel_in_app = EXCLUDED.channel_in_app,
+        channel_whatsapp = EXCLUDED.channel_whatsapp,
+        channel_sms = EXCLUDED.channel_sms,
+        order_updates = EXCLUDED.order_updates,
+        payment_reminders = EXCLUDED.payment_reminders,
+        promotional_offers = EXCLUDED.promotional_offers,
+        updated_at = NOW()
+      RETURNING *`,
+      [
+        shopId,
+        safeInApp,
+        channel_whatsapp !== undefined ? Boolean(channel_whatsapp) : true,
+        channel_sms !== undefined ? Boolean(channel_sms) : true,
+        order_updates !== undefined ? Boolean(order_updates) : true,
+        payment_reminders !== undefined ? Boolean(payment_reminders) : true,
+        promotional_offers !== undefined ? Boolean(promotional_offers) : true,
+      ]
+    );
+
+    return sendSuccess(res, {
+      data: { preferences: result.rows[0] },
+      message: 'Notification preferences updated successfully',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   getMyShop,
   updateMyShop,
   getShopLedger,
+  getNotificationPreferences,
+  updateNotificationPreferences,
 };
+

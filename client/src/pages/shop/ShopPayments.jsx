@@ -19,6 +19,7 @@ import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import PaymentModal from '../../components/payment/PaymentModal';
 
 export const ShopPayments = () => {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ export const ShopPayments = () => {
 
   const [activeTab, setActiveTab] = useState('payments'); // 'payments' | 'ledger'
   const [loading, setLoading] = useState(true);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Shop financials
   const [shopProfile, setShopProfile] = useState(null);
@@ -35,6 +37,7 @@ export const ShopPayments = () => {
   useEffect(() => {
     fetchFinancialData();
   }, []);
+
 
   const fetchFinancialData = async () => {
     setLoading(true);
@@ -78,13 +81,24 @@ export const ShopPayments = () => {
   return (
     <div className="space-y-5 max-w-5xl mx-auto pb-24">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Payments & Udhaar Ledger
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-          Wholesale credit limits, payment receipts, and running account statement
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Payments & Udhaar Ledger
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Wholesale credit limits, payment receipts, and running account statement
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setIsPaymentModalOpen(true)}
+          className="flex items-center gap-2 self-start sm:self-auto shadow-md"
+        >
+          <CreditCard className="w-4 h-4" />
+          <span>Pay Now / Settle Udhaar</span>
+        </Button>
       </div>
 
       {/* Credit Standing Card */}
@@ -102,11 +116,22 @@ export const ShopPayments = () => {
             </h2>
           </div>
 
-          <div className="text-left sm:text-right">
-            <span className="text-xs text-slate-400 block uppercase">Payment Terms</span>
-            <span className="text-sm font-bold text-emerald-400">
-              {shopProfile?.payment_terms || '15-Day Wholesale Credit'}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="text-left sm:text-right">
+              <span className="text-xs text-slate-400 block uppercase">Payment Terms</span>
+              <span className="text-sm font-bold text-emerald-400">
+                {shopProfile?.payment_terms || '15-Day Wholesale Credit'}
+              </span>
+            </div>
+            {creditUsed > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                Clear Dues
+              </button>
+            )}
           </div>
         </div>
 
@@ -156,6 +181,7 @@ export const ShopPayments = () => {
           </div>
         </div>
       </div>
+
 
       {/* Bank Account Transfer Details for Payments */}
       <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-soft">
@@ -267,11 +293,21 @@ export const ShopPayments = () => {
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block">
-                      +₹{parseFloat(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
-                    <Badge variant="success">Confirmed</Badge>
+                  <div className="flex items-center gap-3 self-end sm:self-center">
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block">
+                        +₹{parseFloat(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
+                      <Badge variant="success">Confirmed</Badge>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/api/payments/${p.id}/print`, '_blank')}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-brand-600 transition-colors"
+                      title="Print Official Payment Receipt"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -333,8 +369,21 @@ export const ShopPayments = () => {
           )}
         </Card>
       )}
+
+      {/* Payment Processing Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={() => {
+          setIsPaymentModalOpen(false);
+          fetchFinancialData();
+        }}
+        outstandingBalance={creditUsed}
+        shopDetails={shopProfile}
+      />
     </div>
   );
 };
 
 export default ShopPayments;
+

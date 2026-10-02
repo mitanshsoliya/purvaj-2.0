@@ -18,7 +18,10 @@ import {
   Save,
   KeyRound,
   Plus,
-  Trash2
+  Trash2,
+  Bell,
+  Smartphone,
+  MessageSquare
 } from 'lucide-react';
 
 export const ShopProfile = () => {
@@ -45,6 +48,17 @@ export const ShopProfile = () => {
     status: 'active',
   });
 
+  // Notification Preferences form
+  const [prefData, setPrefData] = useState({
+    channel_in_app: true,
+    channel_whatsapp: true,
+    channel_sms: true,
+    order_updates: true,
+    payment_reminders: true,
+    promotional_offers: true,
+  });
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
   // Password change form
   const [passwords, setPasswords] = useState({
     currentPassword: '',
@@ -62,7 +76,36 @@ export const ShopProfile = () => {
 
   useEffect(() => {
     fetchProfile();
+    fetchPreferences();
   }, []);
+
+  const fetchPreferences = async () => {
+    try {
+      const res = await api.get('/shops/notification-preferences');
+      if (res.data?.success && res.data?.data?.preferences) {
+        setPrefData(res.data.data.preferences);
+      }
+    } catch (e) {
+      console.error('Failed to load notification preferences', e);
+    }
+  };
+
+  const handleSavePreferences = async (e) => {
+    e.preventDefault();
+    setSavingPrefs(true);
+    try {
+      const res = await api.put('/shops/notification-preferences', prefData);
+      if (res.data?.success) {
+        addToast('Notification preferences saved successfully', 'success');
+      }
+    } catch (e) {
+      console.error('Save preferences error', e);
+      addToast('Failed to save notification preferences', 'error');
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -420,6 +463,114 @@ export const ShopProfile = () => {
               </form>
             </div>
           </Card>
+
+          {/* Notification Preferences & Channels */}
+          <Card
+            title="Notification Channels & Alerts"
+            subtitle="Configure WhatsApp, SMS, and in-app updates"
+          >
+            <form onSubmit={handleSavePreferences} className="space-y-4 text-xs">
+              {/* Channel Toggles */}
+              <div className="space-y-2.5">
+                <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block text-[10px]">
+                  Available Channels
+                </span>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">In-App Notifications</p>
+                      <p className="text-[10px] text-slate-400">Order, payment, and dispatch alerts in portal</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                    Mandatory
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">WhatsApp Business Updates</p>
+                      <p className="text-[10px] text-slate-400">Receive order & invoice PDFs on registered mobile</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={prefData.channel_whatsapp}
+                    onChange={(e) => setPrefData({ ...prefData, channel_whatsapp: e.target.checked })}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 dark:border-slate-700 focus:ring-brand-500 cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">SMS Gateway Alerts</p>
+                      <p className="text-[10px] text-slate-400">Critical delivery milestones and payment reminders</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={prefData.channel_sms}
+                    onChange={(e) => setPrefData({ ...prefData, channel_sms: e.target.checked })}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 dark:border-slate-700 focus:ring-brand-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Event Subscriptions */}
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block text-[10px]">
+                  Event Preferences
+                </span>
+
+                <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                  <span className="text-slate-700 dark:text-slate-300">Order & Delivery Status Changes</span>
+                  <input
+                    type="checkbox"
+                    checked={prefData.order_updates}
+                    onChange={(e) => setPrefData({ ...prefData, order_updates: e.target.checked })}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                  <span className="text-slate-700 dark:text-slate-300">Udhaar Balance & Payment Reminders</span>
+                  <input
+                    type="checkbox"
+                    checked={prefData.payment_reminders}
+                    onChange={(e) => setPrefData({ ...prefData, payment_reminders: e.target.checked })}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                  <span className="text-slate-700 dark:text-slate-300">Promotions & Wholesale Broadcasts</span>
+                  <input
+                    type="checkbox"
+                    checked={prefData.promotional_offers}
+                    onChange={(e) => setPrefData({ ...prefData, promotional_offers: e.target.checked })}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300"
+                  />
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                icon={Save}
+                disabled={savingPrefs}
+                className="w-full font-bold shadow-soft"
+              >
+                {savingPrefs ? 'Saving Preferences...' : 'Save Notification Preferences'}
+              </Button>
+            </form>
+          </Card>
         </div>
       </div>
     </div>
@@ -427,3 +578,4 @@ export const ShopProfile = () => {
 };
 
 export default ShopProfile;
+
