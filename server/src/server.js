@@ -24,8 +24,14 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import broadcastRoutes from './routes/broadcastRoutes.js';
 import deliveryRoutes from './routes/deliveryRoutes.js';
 import staffRoutes from './routes/staffRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -74,6 +80,8 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // API Routes
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/upload', uploadRoutes);
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);

@@ -4,7 +4,9 @@
   "private": true,
   "description": "Purvaj 2.0 - B2B Wholesale Ordering & Business Management Platform",
   "scripts": {
-    "dev": "npm --prefix client run dev",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:all": "concurrently -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:client": "npm --prefix client run dev",
     "dev:server": "npm --prefix server run dev",
     "build": "npm --prefix client run build",
     "start:server": "npm --prefix server start"
@@ -20,5 +22,8 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }
