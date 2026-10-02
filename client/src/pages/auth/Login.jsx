@@ -14,7 +14,7 @@ export const Login = () => {
 
   const [activeTab, setActiveTab] = useState('admin'); // 'admin' | 'shop'
   const [email, setEmail] = useState('admin@purvaj.com');
-  const [password, setPassword] = useState('••••••••');
+  const [password, setPassword] = useState('Purvaj@2026');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,8 +23,10 @@ export const Login = () => {
     setError('');
     if (role === 'admin') {
       setEmail('admin@purvaj.com');
+      setPassword('Purvaj@2026');
     } else {
-      setEmail('sk.traders@purvaj.shop');
+      setEmail('ramesh@sktraders.com');
+      setPassword('Purvaj@2026');
     }
   };
 
@@ -166,7 +168,11 @@ export const Login = () => {
 
           {/* Quick Demo Info note */}
           <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Fast Demo Access:</span> One-click switch available inside headers once signed in.
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg text-left text-[11px] font-mono border border-slate-200/60 dark:border-slate-700/60">
+              <div className="font-sans font-semibold text-slate-700 dark:text-slate-200 mb-1">Default Seed Credentials:</div>
+              <div className="flex justify-between py-0.5"><span className="text-slate-500">Admin:</span> <span className="font-semibold text-brand-600 dark:text-brand-400">admin@purvaj.com / Purvaj@2026</span></div>
+              <div className="flex justify-between py-0.5"><span className="text-slate-500">Shop:</span> <span className="font-semibold text-brand-600 dark:text-brand-400">ramesh@sktraders.com / Purvaj@2026</span></div>
+            </div>
           </div>
         </div>
       </div>

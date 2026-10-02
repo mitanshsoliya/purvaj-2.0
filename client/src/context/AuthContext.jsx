@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext();
+
+const ADMIN_ROLES = ['super_admin', 'admin', 'warehouse_manager', 'billing_clerk', 'dispatcher'];
+const SHOP_ROLES = ['shop_owner', 'shop_staff', 'shop'];
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -12,12 +16,11 @@ export const AuthProvider = ({ children }) => {
         console.error('Failed to parse saved user', e);
       }
     }
-    // Default initial mock user for seamless demonstration
     return {
-      id: 'usr_admin_01',
-      name: 'Purvaj Admin',
+      id: 'a0000001-0000-0000-0000-000000000001',
+      name: 'Mitansh Soliya',
       email: 'admin@purvaj.com',
-      role: 'admin',
+      role: 'super_admin',
       warehouse: 'Main Central Warehouse',
       avatar: null,
     };
@@ -45,27 +48,73 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Attempt to sync current user profile from DB on mount
+  useEffect(() => {
+    const syncCurrentUser = async () => {
+      const savedToken = localStorage.getItem('purvaj_token');
+      if (savedToken && !savedToken.startsWith('demo_') && !savedToken.startsWith('jwt_')) {
+        try {
+          const res = await api.get('/auth/me');
+          if (res.data?.success && res.data?.data?.user) {
+            setUser(res.data.data.user);
+          }
+        } catch (err) {
+          console.warn('[AuthContext] Session verification check:', err.response?.data?.message || err.message);
+        }
+      }
+    };
+    syncCurrentUser();
+  }, []);
+
   const login = async ({ email, password, role = 'admin' }) => {
     setLoading(true);
     try {
-      // Future: connect with backend /api/auth/login
+      // 1. Try real backend authentication
+      try {
+        const response = await api.post('/auth/login', { email, password });
+        if (response.data?.success && response.data?.data) {
+          const { user: serverUser, accessToken, refreshToken } = response.data.data;
+          setUser(serverUser);
+          setToken(accessToken);
+          if (refreshToken) {
+            localStorage.setItem('purvaj_refresh_token', refreshToken);
+          }
+          return { success: true, user: serverUser };
+        }
+      } catch (backendError) {
+        // If the backend gave a specific 4xx error (e.g. pending approval, blocked, invalid password)
+        if (backendError.response?.data?.message) {
+          throw new Error(backendError.response.data.message);
+        }
+        // If connection refused / network error, fall through to simulation
+        if (backendError.code !== 'ERR_NETWORK' && backendError.code !== 'ECONNREFUSED') {
+          throw backendError;
+        }
+        console.warn('Backend server offline, falling back to local simulation');
+      }
+
+      // 2. Fallback simulation (offline mode)
       const simulatedUser = role === 'admin'
         ? {
-            id: 'usr_admin_01',
-            name: 'Purvaj Admin',
+            id: 'a0000001-0000-0000-0000-000000000001',
+            name: 'Mitansh Soliya',
             email: email || 'admin@purvaj.com',
-            role: 'admin',
+            role: 'super_admin',
             warehouse: 'Main Central Warehouse',
           }
         : {
-            id: 'usr_shop_102',
+            id: 'b0000001-0000-0000-0000-000000000001',
             name: 'Ramesh Patel',
             shopName: 'Shree Krishna Traders',
-            email: email || 'sk.traders@purvaj.shop',
-            role: 'shop',
-            gstin: '24AAACP1234M1Z2',
-            creditLimit: 250000,
-            city: 'Ahmedabad',
+            email: email || 'ramesh@sktraders.com',
+            role: 'shop_owner',
+            shop: {
+              id: 'c0000001-0000-0000-0000-000000000001',
+              shop_name: 'Shree Krishna Traders',
+              credit_limit: 250000,
+              credit_used: 0,
+              city: 'Ahmedabad',
+            },
           };
 
       const simulatedToken = `jwt_${role}_${Date.now()}`;
@@ -77,31 +126,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerShop = async (shopData) => {
+    setLoading(true);
+    try {
+      const res = await api.post('/auth/register', shopData);
+      return res.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('purvaj_user');
     localStorage.removeItem('purvaj_token');
+    localStorage.removeItem('purvaj_refresh_token');
+    api.post('/auth/logout').catch(() => {});
   };
 
   const switchRole = (newRole) => {
     const newUser = newRole === 'admin'
       ? {
-          id: 'usr_admin_01',
-          name: 'Purvaj Admin',
+          id: 'a0000001-0000-0000-0000-000000000001',
+          name: 'Mitansh Soliya',
           email: 'admin@purvaj.com',
-          role: 'admin',
+          role: 'super_admin',
           warehouse: 'Main Central Warehouse',
         }
       : {
-          id: 'usr_shop_102',
+          id: 'b0000001-0000-0000-0000-000000000001',
           name: 'Ramesh Patel',
           shopName: 'Shree Krishna Traders',
-          email: 'sk.traders@purvaj.shop',
-          role: 'shop',
-          gstin: '24AAACP1234M1Z2',
-          creditLimit: 250000,
-          city: 'Ahmedabad',
+          email: 'ramesh@sktraders.com',
+          role: 'shop_owner',
+          shop: {
+            id: 'c0000001-0000-0000-0000-000000000001',
+            shop_name: 'Shree Krishna Traders',
+            credit_limit: 250000,
+            credit_used: 0,
+            city: 'Ahmedabad',
+          },
         };
 
     setUser(newUser);
@@ -113,15 +178,19 @@ export const AuthProvider = ({ children }) => {
     return newUser;
   };
 
+  const isAdmin = ADMIN_ROLES.includes(user?.role) || user?.role === 'admin';
+  const isShop = SHOP_ROLES.includes(user?.role);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
         isAuthenticated: !!user && !!token,
-        isAdmin: user?.role === 'admin',
-        isShop: user?.role === 'shop',
+        isAdmin,
+        isShop,
         login,
+        registerShop,
         logout,
         switchRole,
         loading,
@@ -139,3 +208,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;

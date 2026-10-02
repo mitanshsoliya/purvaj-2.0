@@ -1,65 +1,56 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
+import authController from '../controllers/authController.js';
+import { authenticate } from '../middleware/auth.js';
+import { validateBody } from '../utils/validate.js';
+import {
+  loginSchema,
+  registerShopSchema,
+  refreshTokenSchema,
+  changePasswordSchema,
+} from '../validators/authValidators.js';
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'purvaj_super_secret_jwt_key_2026';
+/**
+ * @route   POST /api/auth/login
+ * @desc    Authenticate admin or shop user with email & password
+ * @access  Public
+ */
+router.post('/login', validateBody(loginSchema), authController.login);
 
 /**
- * Authentication login endpoint foundation
+ * @route   POST /api/auth/register
+ * @desc    Register a new shop (creates owner user + shop with status: pending_approval)
+ * @access  Public
  */
-router.post('/login', (req, res) => {
-  const { email, role = 'admin' } = req.body;
-
-  const user = role === 'admin'
-    ? {
-        id: 'usr_admin_01',
-        name: 'Purvaj Admin',
-        email: email || 'admin@purvaj.com',
-        role: 'admin',
-        warehouse: 'Main Central Warehouse',
-      }
-    : {
-        id: 'usr_shop_102',
-        name: 'Ramesh Patel',
-        shopName: 'Shree Krishna Traders',
-        email: email || 'sk.traders@purvaj.shop',
-        role: 'shop',
-        gstin: '24AAACP1234M1Z2',
-        creditLimit: 250000,
-        city: 'Ahmedabad',
-      };
-
-  const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-
-  res.json({
-    success: true,
-    message: 'Authentication successful',
-    token,
-    user,
-  });
-});
+router.post('/register', validateBody(registerShopSchema), authController.registerShop);
 
 /**
- * Verify current user session endpoint
+ * @route   POST /api/auth/refresh
+ * @desc    Exchange refresh token for a new access token
+ * @access  Public
  */
-router.get('/me', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'No authorization token provided' });
-  }
+router.post('/refresh', validateBody(refreshTokenSchema), authController.refreshAccessToken);
 
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    res.json({ success: true, user: decoded });
-  } catch (err) {
-    res.status(401).json({ success: false, message: 'Invalid or expired session token' });
-  }
-});
+/**
+ * @route   GET /api/auth/me
+ * @desc    Get currently logged in user profile (verified against database)
+ * @access  Protected
+ */
+router.get('/me', authenticate, authController.getCurrentUser);
+
+/**
+ * @route   POST /api/auth/change-password
+ * @desc    Change authenticated user's password
+ * @access  Protected
+ */
+router.post('/change-password', authenticate, validateBody(changePasswordSchema), authController.changePassword);
+
+/**
+ * @route   POST /api/auth/logout
+ * @desc    Logout acknowledgment
+ * @access  Public
+ */
+router.post('/logout', authController.logout);
 
 export default router;

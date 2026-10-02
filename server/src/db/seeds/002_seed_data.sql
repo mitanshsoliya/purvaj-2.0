@@ -10,15 +10,15 @@
 
 -- 1. USERS (Admin + 5 Shop Owners)
 INSERT INTO users (id, name, email, mobile, password_hash, role, is_active) VALUES
-  ('a0000001-0000-0000-0000-000000000001', 'Mitansh Soliya', 'admin@purvaj.com', '9724006035', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'super_admin', true),
-  ('a0000001-0000-0000-0000-000000000002', 'Rajesh Warehouse', 'rajesh@purvaj.com', '9876543210', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'warehouse_manager', true),
-  ('a0000001-0000-0000-0000-000000000003', 'Priya Billing', 'priya@purvaj.com', '9876543211', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'billing_clerk', true),
+  ('a0000001-0000-0000-0000-000000000001', 'Mitansh Soliya', 'admin@purvaj.com', '9724006035', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'super_admin', true),
+  ('a0000001-0000-0000-0000-000000000002', 'Rajesh Warehouse', 'rajesh@purvaj.com', '9876543210', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'warehouse_manager', true),
+  ('a0000001-0000-0000-0000-000000000003', 'Priya Billing', 'priya@purvaj.com', '9876543211', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'billing_clerk', true),
   -- Shop Owners
-  ('b0000001-0000-0000-0000-000000000001', 'Ramesh Patel', 'ramesh@sktraders.com', '9898001001', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'shop_owner', true),
-  ('b0000001-0000-0000-0000-000000000002', 'Sunil Shah', 'sunil@jaymatadi.com', '9898001002', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'shop_owner', true),
-  ('b0000001-0000-0000-0000-000000000003', 'Bhavesh Modi', 'bhavesh@krishnastore.com', '9898001003', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'shop_owner', true),
-  ('b0000001-0000-0000-0000-000000000004', 'Dinesh Joshi', 'dinesh@mahadevtraders.com', '9898001004', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'shop_owner', true),
-  ('b0000001-0000-0000-0000-000000000005', 'Vijay Sharma', 'vijay@ganeshdistributor.com', '9898001005', '$2a$10$LJxqF8VwFEOKHYEZlqQF7.7bGv2hGJ8vWz3WYSf5m7YsC6L6J/M4S', 'shop_owner', true)
+  ('b0000001-0000-0000-0000-000000000001', 'Ramesh Patel', 'ramesh@sktraders.com', '9898001001', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'shop_owner', true),
+  ('b0000001-0000-0000-0000-000000000002', 'Sunil Shah', 'sunil@jaymatadi.com', '9898001002', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'shop_owner', true),
+  ('b0000001-0000-0000-0000-000000000003', 'Bhavesh Modi', 'bhavesh@krishnastore.com', '9898001003', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'shop_owner', true),
+  ('b0000001-0000-0000-0000-000000000004', 'Dinesh Joshi', 'dinesh@mahadevtraders.com', '9898001004', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'shop_owner', true),
+  ('b0000001-0000-0000-0000-000000000005', 'Vijay Sharma', 'vijay@ganeshdistributor.com', '9898001005', '$2a$10$ZUWtFDRu7dBZHNaZn2kSfu4aJbtL7ne5ycj4BYSaFu2991Js4uDQG', 'shop_owner', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- 2. SHOPS (5 registered retail shops)

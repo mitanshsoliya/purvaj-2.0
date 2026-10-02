@@ -3,17 +3,27 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const RoleRoute = ({ children, allowedRoles = [] }) => {
-  const { user, switchRole } = useAuth();
+  const { user, switchRole, isAdmin, isShop } = useAuth();
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    // If accessing an admin route while currently set to shop role (e.g. from previous testing),
-    // automatically elevate/switch to admin so the Admin Dashboard opens seamlessly without error
-    if (allowedRoles.includes('admin') && user.role === 'shop') {
+  // Check if user has required access
+  const hasAccess =
+    (allowedRoles.includes('admin') && isAdmin) ||
+    (allowedRoles.includes('shop') && isShop) ||
+    allowedRoles.includes(user.role);
+
+  if (!hasAccess) {
+    // If accessing an admin route while currently set to shop role,
+    // automatically switch to admin so the Admin Dashboard opens seamlessly
+    if (allowedRoles.includes('admin') && isShop) {
       switchRole('admin');
+      return children;
+    }
+    if (allowedRoles.includes('shop') && isAdmin) {
+      switchRole('shop');
       return children;
     }
     return <Navigate to="/unauthorized" replace />;

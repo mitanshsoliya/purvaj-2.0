@@ -48,9 +48,9 @@ import ShopHelp from '../pages/shop/ShopHelp';
 
 // Root redirector based on authenticated user's role
 const RootRedirector = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isShop, isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={user?.role === 'shop' ? '/shop' : '/admin'} replace />;
+  return <Navigate to={isShop ? '/shop' : '/admin'} replace />;
 };
 
 export const AppRoutes = () => {
