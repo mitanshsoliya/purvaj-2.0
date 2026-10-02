@@ -27,6 +27,8 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { PageSkeleton } from '../../components/common/Skeleton';
+import OrderProgressTracker from '../../components/orders/OrderProgressTracker';
+import { useSocket } from '../../context/SocketContext';
 
 export const ShopDashboard = () => {
   const { user } = useAuth();
@@ -46,9 +48,66 @@ export const ShopDashboard = () => {
   const [frequentProducts, setFrequentProducts] = useState([]);
   const [offers, setOffers] = useState([]);
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Real-time automatic updates when Admin updates order status
+  useEffect(() => {
+    const handleLiveOrderUpdate = (event) => {
+      const data = event.detail || event;
+      if (!data) return;
+
+      const orderId = data.orderId || data.id;
+      const orderNum = data.orderNumber || data.order_number;
+      const newStatus = (data.newStatus || data.orderStatus || data.status || data.deliveryStatus || '').toLowerCase();
+
+      // Update recentOrders in place
+      setRecentOrders((prev) =>
+        prev.map((o) => {
+          if (o.id === orderId || o.order_number === orderNum) {
+            return {
+              ...o,
+              order_status: newStatus || o.order_status,
+              delivery_status: data.deliveryStatus || o.delivery_status,
+              driver_name: data.driverName || o.driver_name,
+              driver_mobile: data.driverMobile || o.driver_mobile,
+              vehicle_number: data.vehicleNumber || o.vehicle_number,
+              confirmed_at: data.confirmedAt || (newStatus === 'confirmed' ? new Date().toISOString() : o.confirmed_at),
+              dispatched_at: data.dispatchedAt || (newStatus === 'dispatched' ? new Date().toISOString() : o.dispatched_at),
+              delivered_at: data.deliveredAt || (newStatus === 'delivered' ? new Date().toISOString() : o.delivered_at),
+              updated_at: data.updatedAt || new Date().toISOString(),
+            };
+          }
+          return o;
+        })
+      );
+
+      // Refresh dashboard KPI stats
+      fetchDashboardData();
+    };
+
+    window.addEventListener('purvaj:order-updated', handleLiveOrderUpdate);
+
+    if (socket) {
+      socket.on('shop_order_updated', handleLiveOrderUpdate);
+      socket.on('order_status_changed', handleLiveOrderUpdate);
+      socket.on('delivery_status_changed', handleLiveOrderUpdate);
+      socket.on('shop_order_created', handleLiveOrderUpdate);
+    }
+
+    return () => {
+      window.removeEventListener('purvaj:order-updated', handleLiveOrderUpdate);
+      if (socket) {
+        socket.off('shop_order_updated', handleLiveOrderUpdate);
+        socket.off('order_status_changed', handleLiveOrderUpdate);
+        socket.off('delivery_status_changed', handleLiveOrderUpdate);
+        socket.off('shop_order_created', handleLiveOrderUpdate);
+      }
+    };
+  }, [socket]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -536,8 +595,13 @@ export const ShopDashboard = () => {
                   </div>
                 </div>
 
+                {/* Live Order Progress Tracker Bar */}
+                <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <OrderProgressTracker order={order} variant="compact" />
+                </div>
+
                 <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-brand-600 dark:text-brand-400 font-semibold">
-                  <span>View Details & Invoice</span>
+                  <span>View Details & Tracking</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </Link>

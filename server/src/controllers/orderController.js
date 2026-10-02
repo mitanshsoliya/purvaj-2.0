@@ -573,8 +573,27 @@ export const updateOrderStatus = async (req, res, next) => {
 
     // Real-time socket event
     if (req.io) {
-      req.io.emit('order_status_changed', { orderId: id, orderNumber: order.order_number, newStatus: status });
-      req.io.to(`shop_${order.shop_id}`).emit('shop_order_updated', { orderId: id, orderNumber: order.order_number, newStatus: status });
+      const eventPayload = {
+        orderId: id,
+        orderNumber: order.order_number,
+        newStatus: status,
+        orderStatus: status,
+        status: status,
+        deliveryStatus: updatedOrder.delivery_status || (status === 'confirmed' ? 'CONFIRMED' : status.toUpperCase()),
+        updatedAt: updatedOrder.updated_at || new Date().toISOString(),
+        confirmedAt: updatedOrder.confirmed_at,
+        dispatchedAt: updatedOrder.dispatched_at,
+        deliveredAt: updatedOrder.delivered_at,
+        shopId: order.shop_id,
+        note: note || `Order #${order.order_number} status updated to ${status}`,
+        order: updatedOrder,
+      };
+
+      req.io.emit('order_status_changed', eventPayload);
+      req.io.to(`shop_${order.shop_id}`).emit('shop_order_updated', eventPayload);
+      if (shopRes.rows[0]?.owner_user_id) {
+        req.io.to(`user_${shopRes.rows[0].owner_user_id}`).emit('shop_order_updated', eventPayload);
+      }
     }
 
     await logAuditAction({

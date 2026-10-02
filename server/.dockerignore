@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+*.md
+uploads/*
+!uploads/.gitkeep
+test-*.js
+update-passwords.js
+coverage
+.DS_Store

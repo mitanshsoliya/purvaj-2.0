@@ -114,6 +114,16 @@ export const getProductById = async (req, res, next) => {
     const { id } = req.params;
     const shopId = req.user?.shop?.id || req.user?.shop?.shop_id || null;
 
+    const queryParams = [id];
+    let sppJoinSingle = '';
+    let sppSelectSingle = '';
+
+    if (shopId) {
+      queryParams.push(shopId);
+      sppSelectSingle = `, spp.price as custom_price, COALESCE(spp.price, p.selling_price) as final_price`;
+      sppJoinSingle = `LEFT JOIN shop_product_prices spp ON spp.product_id = p.id AND spp.shop_id = $${queryParams.length} AND spp.status = 'active'`;
+    }
+
     const query = `
       SELECT 
         p.*,
@@ -127,16 +137,16 @@ export const getProductById = async (req, res, next) => {
           WHEN COALESCE(inv.available_stock, 0) <= p.minimum_stock THEN 'low_stock'
           ELSE 'in_stock'
         END as stock_status
-        ${shopId ? ', spp.price as custom_price, COALESCE(spp.price, p.selling_price) as final_price' : ''}
+        ${sppSelectSingle}
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN inventory inv ON p.id = inv.product_id
-      ${shopId ? `LEFT JOIN shop_product_prices spp ON spp.product_id = p.id AND spp.shop_id = '${shopId}' AND spp.status = 'active'` : ''}
+      ${sppJoinSingle}
       WHERE p.id = $1
     `;
 
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(query, queryParams);
 
     if (result.rows.length === 0) {
       return sendError(res, { message: 'Product not found', statusCode: 404, code: 'NOT_FOUND' });

@@ -51,9 +51,9 @@ const upload = multer({
 /**
  * @route   POST /api/upload
  * @desc    Upload product image
- * @access  Public or Protected
+ * @access  Authenticated users only
  */
-router.post('/', (req, res, next) => {
+router.post('/', authenticate, (req, res, next) => {
   upload.single('image')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       return sendError(res, { message: `Upload error: ${err.message}`, statusCode: 400 });

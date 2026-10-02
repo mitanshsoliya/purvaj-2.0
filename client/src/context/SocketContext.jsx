@@ -199,12 +199,62 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
+    // Real-time order status updates (Admin confirmation, packing, dispatch, delivery)
+    const handleOrderEvent = (data) => {
+      console.log('[Socket] Real-time order event received:', data);
+
+      // Play audio chime
+      playNotificationSound();
+
+      const orderNum = data.orderNumber || data.order_number || 'Wholesale Order';
+      const status = (data.newStatus || data.orderStatus || data.status || data.deliveryStatus || '').toLowerCase();
+
+      let toastMsg = `Order #${orderNum} status updated to ${status.toUpperCase()}`;
+      let toastType = 'info';
+
+      if (status === 'confirmed') {
+        toastMsg = `🎉 Order #${orderNum} Confirmed! Purvaj Admin has approved your order.`;
+        toastType = 'success';
+      } else if (status === 'packed') {
+        toastMsg = `📦 Order #${orderNum} is Packed & Ready in warehouse.`;
+        toastType = 'info';
+      } else if (status === 'dispatched' || status === 'out_for_delivery') {
+        toastMsg = `🚚 Order #${orderNum} is OUT FOR DELIVERY to your shop!`;
+        toastType = 'info';
+      } else if (status === 'delivered') {
+        toastMsg = `✅ Order #${orderNum} has been DELIVERED to your shop!`;
+        toastType = 'success';
+      } else if (status === 'cancelled') {
+        toastMsg = `❌ Order #${orderNum} was cancelled by warehouse.`;
+        toastType = 'error';
+      }
+
+      addToast(toastMsg, toastType);
+
+      // Dispatch global window event so ShopOrders & ShopDashboard react instantly
+      window.dispatchEvent(new CustomEvent('purvaj:order-updated', { detail: data }));
+
+      // Also refresh notifications in case in-app notification arrived
+      fetchNotifications();
+    };
+
+    newSocket.on('shop_order_updated', handleOrderEvent);
+    newSocket.on('order_status_changed', handleOrderEvent);
+    newSocket.on('delivery_status_changed', handleOrderEvent);
+    newSocket.on('shop_order_created', (data) => {
+      console.log('[Socket] New order placed:', data);
+      window.dispatchEvent(new CustomEvent('purvaj:order-updated', { detail: data }));
+    });
+
     setSocket(newSocket);
 
     // Initial fetch on mount
     fetchNotifications();
 
     return () => {
+      newSocket.off('shop_order_updated', handleOrderEvent);
+      newSocket.off('order_status_changed', handleOrderEvent);
+      newSocket.off('delivery_status_changed', handleOrderEvent);
       newSocket.disconnect();
     };
   }, [user, playNotificationSound, addToast, fetchNotifications]);

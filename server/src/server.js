@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 
 // Route imports
@@ -32,6 +33,7 @@ import { verifyAccessToken } from './middleware/auth.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { sanitizeInput, securityHeaders } from './middleware/security.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,10 +46,15 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+const ALLOWED_ORIGINS = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',')
+  : ['http://localhost:5173'];
+
 // Socket.IO Setup for real-time B2B updates
 const io = new SocketIOServer(server, {
   cors: {
-    origin: '*',
+    origin: IS_DEV ? '*' : ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   },
 });
@@ -66,9 +73,9 @@ io.use(async (socket, next) => {
     }
 
     let decoded;
-    if (token === 'demo_jwt_token_purvaj_2.0' || token.startsWith('demo_') || token.startsWith('jwt_admin_')) {
+    if (IS_DEV && (token === 'demo_jwt_token_purvaj_2.0' || token.startsWith('demo_') || token.startsWith('jwt_admin_'))) {
       decoded = { userId: 'a0000001-0000-0000-0000-000000000001', role: 'admin' };
-    } else if (token.startsWith('jwt_shop_')) {
+    } else if (IS_DEV && token.startsWith('jwt_shop_')) {
       decoded = { userId: 'b0000001-0000-0000-0000-000000000001', role: 'shop_owner' };
     } else {
       decoded = verifyAccessToken(token);
@@ -197,17 +204,61 @@ app.use((req, res, next) => {
   next();
 });
 
+// Rate Limiters
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: IS_DEV ? 5000 : 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later.', code: 'RATE_LIMITED' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: IS_DEV ? 500 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many authentication attempts, please try again later.', code: 'AUTH_RATE_LIMITED' },
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: IS_DEV ? 200 : 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many uploads, please try again later.', code: 'UPLOAD_RATE_LIMITED' },
+});
+
 // Middleware
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: '*' }));
-app.use(express.json());
-app.use(morgan('dev'));
+app.use(helmet({
+  contentSecurityPolicy: IS_DEV ? false : {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      connectSrc: ["'self'", ...ALLOWED_ORIGINS],
+    },
+  },
+}));
+app.use(cors({ origin: IS_DEV ? '*' : ALLOWED_ORIGINS, credentials: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(globalLimiter);
+app.use(securityHeaders);
+app.use(sanitizeInput);
+if (!IS_DEV) {
+  app.use(morgan('combined'));
+} else {
+  app.use(morgan('dev'));
+}
 
 // API Routes
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/api/upload', uploadRoutes);
+app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api', healthRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);

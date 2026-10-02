@@ -27,6 +27,8 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Drawer from '../../components/common/Drawer';
 import PaymentModal from '../../components/payment/PaymentModal';
+import OrderProgressTracker from '../../components/orders/OrderProgressTracker';
+import { useSocket } from '../../context/SocketContext';
 
 const STATUS_TABS = [
   { id: 'all', label: 'All Orders' },
@@ -56,9 +58,94 @@ export const ShopOrders = () => {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchOrders();
   }, [activeTab, debouncedSearch]);
+
+  // Real-time automatic updates when Admin confirms/dispatches/delivers orders
+  useEffect(() => {
+    const handleLiveOrderUpdate = (event) => {
+      const data = event.detail || event;
+      if (!data) return;
+
+      const orderId = data.orderId || data.id;
+      const orderNum = data.orderNumber || data.order_number;
+      const newStatus = (data.newStatus || data.orderStatus || data.status || data.deliveryStatus || '').toLowerCase();
+
+      // 1. Update in-place in orders list
+      setOrders((prevOrders) =>
+        prevOrders.map((o) => {
+          if (o.id === orderId || o.order_number === orderNum) {
+            return {
+              ...o,
+              order_status: newStatus || o.order_status,
+              delivery_status: data.deliveryStatus || o.delivery_status,
+              driver_name: data.driverName || o.driver_name,
+              driver_mobile: data.driverMobile || o.driver_mobile,
+              vehicle_number: data.vehicleNumber || o.vehicle_number,
+              confirmed_at: data.confirmedAt || (newStatus === 'confirmed' ? new Date().toISOString() : o.confirmed_at),
+              dispatched_at: data.dispatchedAt || (newStatus === 'dispatched' ? new Date().toISOString() : o.dispatched_at),
+              delivered_at: data.deliveredAt || (newStatus === 'delivered' ? new Date().toISOString() : o.delivered_at),
+              updated_at: data.updatedAt || new Date().toISOString(),
+            };
+          }
+          return o;
+        })
+      );
+
+      // 2. If the order detail drawer is currently open for this order, update it live!
+      setSelectedOrder((prev) => {
+        if (!prev) return null;
+        if (prev.id === orderId || prev.order_number === orderNum) {
+          return {
+            ...prev,
+            order_status: newStatus || prev.order_status,
+            delivery_status: data.deliveryStatus || prev.delivery_status,
+            driver_name: data.driverName || prev.driver_name,
+            driver_mobile: data.driverMobile || prev.driver_mobile,
+            vehicle_number: data.vehicleNumber || prev.vehicle_number,
+            confirmed_at: data.confirmedAt || (newStatus === 'confirmed' ? new Date().toISOString() : prev.confirmed_at),
+            dispatched_at: data.dispatchedAt || (newStatus === 'dispatched' ? new Date().toISOString() : prev.dispatched_at),
+            delivered_at: data.deliveredAt || (newStatus === 'delivered' ? new Date().toISOString() : prev.delivered_at),
+            updated_at: data.updatedAt || new Date().toISOString(),
+          };
+        }
+        return prev;
+      });
+
+      // 3. Re-fetch timeline if this order is selected
+      if (orderId && selectedOrder && (selectedOrder.id === orderId || selectedOrder.order_number === orderNum)) {
+        api.get(`/delivery/orders/${orderId}/timeline`)
+          .then((res) => {
+            if (res.data?.success && res.data?.data) {
+              setDeliveryTimeline(res.data.data);
+            }
+          })
+          .catch(() => {});
+      }
+    };
+
+    window.addEventListener('purvaj:order-updated', handleLiveOrderUpdate);
+
+    if (socket) {
+      socket.on('shop_order_updated', handleLiveOrderUpdate);
+      socket.on('order_status_changed', handleLiveOrderUpdate);
+      socket.on('delivery_status_changed', handleLiveOrderUpdate);
+      socket.on('shop_order_created', handleLiveOrderUpdate);
+    }
+
+    return () => {
+      window.removeEventListener('purvaj:order-updated', handleLiveOrderUpdate);
+      if (socket) {
+        socket.off('shop_order_updated', handleLiveOrderUpdate);
+        socket.off('order_status_changed', handleLiveOrderUpdate);
+        socket.off('delivery_status_changed', handleLiveOrderUpdate);
+        socket.off('shop_order_created', handleLiveOrderUpdate);
+      }
+    };
+  }, [socket, selectedOrder]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -293,6 +380,11 @@ export const ShopOrders = () => {
                 </div>
               </div>
 
+              {/* Live Order Progress Tracker on Card */}
+              <div className="pt-2.5 pb-1 border-t border-slate-100 dark:border-slate-800">
+                <OrderProgressTracker order={order} variant="compact" />
+              </div>
+
               {/* Actions Footer */}
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
                 <button
@@ -331,93 +423,12 @@ export const ShopOrders = () => {
       >
         {selectedOrder && (
           <div className="space-y-5 pb-6">
-            {/* Visual Delivery Lifecycle Timeline */}
-            <div className="bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Delivery Lifecycle (Single Warehouse)
-                </h3>
-                <span className="text-[11px] font-bold text-brand-600 dark:text-brand-400 uppercase">
-                  {(deliveryTimeline?.order?.delivery_status || selectedOrder.order_status).replace(/_/g, ' ')}
-                </span>
-              </div>
-
-              {/* Delivery Metadata */}
-              {(deliveryTimeline?.order?.estimated_delivery_date || deliveryTimeline?.order?.contact_person) && (
-                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] space-y-1 text-slate-600 dark:text-slate-300">
-                  {deliveryTimeline.order.estimated_delivery_date && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Est. Delivery:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">
-                        {new Date(deliveryTimeline.order.estimated_delivery_date).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                  )}
-                  {deliveryTimeline.order.contact_person && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Recipient:</span>
-                      <span>{deliveryTimeline.order.contact_person} {deliveryTimeline.order.contact_number ? `(${deliveryTimeline.order.contact_number})` : ''}</span>
-                    </div>
-                  )}
-                  {deliveryTimeline.order.delivery_address && (
-                    <div className="text-[10px] text-slate-400 pt-0.5 border-t border-slate-100 dark:border-slate-800">
-                      Destination: {deliveryTimeline.order.delivery_address}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Dynamic Milestones */}
-              <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
-                {(deliveryTimeline?.timeline || [
-                  { key: 'ORDERED', title: 'Order Placed', completed: true, timestamp: selectedOrder.created_at },
-                  { key: 'CONFIRMED', title: 'Confirmed', completed: ['confirmed', 'processing', 'dispatched', 'delivered'].includes(selectedOrder.order_status) },
-                  { key: 'PROCESSING', title: 'Processing', completed: ['processing', 'dispatched', 'delivered'].includes(selectedOrder.order_status) },
-                  { key: 'PACKED', title: 'Packed', completed: ['dispatched', 'delivered'].includes(selectedOrder.order_status) },
-                  { key: 'OUT_FOR_DELIVERY', title: 'Out for Delivery', completed: ['dispatched', 'delivered'].includes(selectedOrder.order_status) },
-                  { key: 'DELIVERED', title: 'Delivered', completed: selectedOrder.order_status === 'delivered' }
-                ]).map((stage, idx) => (
-                  <div key={stage.key || idx} className="relative">
-                    <div
-                      className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 transition-all ${
-                        stage.completed
-                          ? 'bg-emerald-500'
-                          : stage.current
-                          ? 'bg-brand-500 ring-2 ring-brand-300 animate-pulse'
-                          : 'bg-slate-300 dark:bg-slate-700'
-                      }`}
-                    />
-                    <div className="flex items-baseline justify-between">
-                      <p className={`text-xs font-bold ${stage.completed || stage.current ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                        {stage.title}
-                      </p>
-                      {stage.timestamp && (
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(stage.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                    </div>
-                    {stage.description && (
-                      <p className="text-[11px] text-slate-500">{stage.description}</p>
-                    )}
-                    {stage.notes && (
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 italic mt-0.5">
-                        "{stage.notes}"
-                      </p>
-                    )}
-                    {stage.driver_name && (
-                      <div className="mt-1 p-2 rounded bg-brand-50/60 dark:bg-brand-950/40 text-[10px] text-brand-900 dark:text-brand-300 border border-brand-200/50 dark:border-brand-800/40">
-                        Driver: <strong>{stage.driver_name}</strong> {stage.driver_mobile ? `• ${stage.driver_mobile}` : ''} {stage.vehicle_number ? `(${stage.vehicle_number})` : ''}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Live Visual Delivery Pipeline & Progress Tracker */}
+            <OrderProgressTracker
+              order={selectedOrder}
+              timeline={deliveryTimeline}
+              variant="full"
+            />
 
             {/* Line Items List */}
             <div>

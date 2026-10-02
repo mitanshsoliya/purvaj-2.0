@@ -363,17 +363,27 @@ export const updateOrderDeliveryStatus = async (req, res, next) => {
 
     // Emit Realtime Socket events
     if (req.io) {
-      req.io.emit('delivery_status_changed', {
+      const deliveryPayload = {
         orderId,
         orderNumber: order.order_number,
         deliveryStatus: normalizedStatus,
         orderStatus: mappedOrderStatus,
-      });
-      req.io.to(`shop_${order.shop_id}`).emit('shop_order_updated', {
-        orderId,
-        orderNumber: order.order_number,
-        deliveryStatus: normalizedStatus,
-      });
+        newStatus: mappedOrderStatus,
+        status: mappedOrderStatus,
+        driverName: driver_name,
+        driverMobile: driver_mobile,
+        vehicleNumber: vehicle_number,
+        note,
+        updatedAt: new Date().toISOString(),
+        order: updatedOrder,
+      };
+
+      req.io.emit('delivery_status_changed', deliveryPayload);
+      req.io.emit('order_status_changed', deliveryPayload);
+      req.io.to(`shop_${order.shop_id}`).emit('shop_order_updated', deliveryPayload);
+      if (order.owner_user_id) {
+        req.io.to(`user_${order.owner_user_id}`).emit('shop_order_updated', deliveryPayload);
+      }
     }
 
     await logAuditAction({

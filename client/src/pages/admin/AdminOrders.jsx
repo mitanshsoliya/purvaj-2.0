@@ -15,6 +15,8 @@ import Modal from '../../components/common/Modal';
 import StatusBadge from '../../components/common/StatusBadge';
 import EmptyState from '../../components/common/EmptyState';
 import LoadingState from '../../components/common/LoadingState';
+import { useToast } from '../../context/ToastContext';
+import { useSocket } from '../../context/SocketContext';
 
 export const AdminOrders = () => {
   const location = useLocation();
@@ -23,6 +25,9 @@ export const AdminOrders = () => {
   const [search, setSearch] = useState('');
   const [statusTab, setStatusTab] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
+
+  const { addToast } = useToast();
+  const { socket } = useSocket();
 
   // Detail Modal
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -43,6 +48,25 @@ export const AdminOrders = () => {
     else if (path.includes('/orders/cancelled')) setStatusTab('cancelled');
     else if (path.includes('/orders/returns')) setStatusTab('returned');
   }, [location.pathname]);
+
+  // Real-time listener for incoming orders placed by shops
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewOrder = (data) => {
+      console.log('[AdminOrders] Real-time new wholesale order arrived:', data);
+      addToast(`🛒 New Order #${data.orderNumber} placed by ${data.shopName || 'retailer'} (₹${parseFloat(data.total || 0).toLocaleString('en-IN')})`, 'info');
+      fetchOrders();
+    };
+
+    socket.on('new_order', handleNewOrder);
+    socket.on('order_created', handleNewOrder);
+
+    return () => {
+      socket.off('new_order', handleNewOrder);
+      socket.off('order_created', handleNewOrder);
+    };
+  }, [socket]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -210,6 +234,23 @@ export const AdminOrders = () => {
       });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleQuickConfirm = async (e, orderId, orderNumber) => {
+    e.stopPropagation();
+    try {
+      await api.patch(`/orders/${orderId}/status`, {
+        status: 'confirmed',
+        note: `Order confirmed by warehouse administrator`,
+      });
+      addToast(`Order #${orderNumber} successfully confirmed!`, 'success');
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, order_status: 'confirmed' } : o))
+      );
+    } catch (err) {
+      console.error('Failed to quick confirm:', err);
+      addToast(err.response?.data?.message || 'Failed to confirm order', 'error');
     }
   };
 
@@ -504,6 +545,18 @@ export const AdminOrders = () => {
 
                       <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
+                          {order.order_status === 'pending' && (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={(e) => handleQuickConfirm(e, order.id, order.order_number)}
+                              className="flex items-center gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-soft"
+                              title="Quick confirm order and reserve stock"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Confirm</span>
+                            </Button>
+                          )}
                           <Button
                             variant="secondary"
                             size="sm"

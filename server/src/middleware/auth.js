@@ -2,8 +2,17 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 import { AppError } from '../utils/AppError.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'purvaj_wholesale_jwt_production_secret_key_2026';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET + '_refresh';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || (JWT_SECRET ? JWT_SECRET + '_refresh' : undefined);
+
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET environment variable is not set. Server cannot start securely.');
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+}
+
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 /**
  * Generate short-lived access token (15 min)
@@ -53,10 +62,10 @@ export const authenticate = async (req, res, next) => {
     }
     let decoded;
 
-    // Gracefully handle dev/demo tokens during browser testing
-    if (token === 'demo_jwt_token_purvaj_2.0' || token.startsWith('demo_') || token.startsWith('jwt_admin_')) {
+    // Dev-only demo tokens — BLOCKED in production
+    if (IS_DEV && (token === 'demo_jwt_token_purvaj_2.0' || token.startsWith('demo_') || token.startsWith('jwt_admin_'))) {
       decoded = { userId: 'a0000001-0000-0000-0000-000000000001', role: 'admin' };
-    } else if (token.startsWith('jwt_shop_')) {
+    } else if (IS_DEV && token.startsWith('jwt_shop_')) {
       decoded = { userId: 'b0000001-0000-0000-0000-000000000001', role: 'shop_owner' };
     } else {
       try {
