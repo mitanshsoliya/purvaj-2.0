@@ -16,5 +16,9 @@
     "purvaj"
   ],
   "author": "Purvaj",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2"
+  }
 }
