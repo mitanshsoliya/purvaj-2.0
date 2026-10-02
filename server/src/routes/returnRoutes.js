@@ -29,6 +29,6 @@ router.post('/', returnController.createReturn);
  * @desc    Admin / warehouse processes return status & credit note
  * @access  Admin, Warehouse Manager
  */
-router.patch('/:id/status', authorize('super_admin', 'admin', 'warehouse_manager'), returnController.updateReturnStatus);
+router.patch('/:id/status', authorize('admin'), returnController.updateReturnStatus);
 
 export default router;

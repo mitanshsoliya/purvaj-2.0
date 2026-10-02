@@ -3,7 +3,7 @@ import api from '../services/api';
 
 const AuthContext = createContext();
 
-const ADMIN_ROLES = ['super_admin', 'admin', 'warehouse_manager', 'billing_clerk', 'dispatcher'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 const SHOP_ROLES = ['shop_owner', 'shop_staff', 'shop'];
 
 export const AuthProvider = ({ children }) => {
@@ -11,7 +11,9 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem('purvaj_user');
     if (savedUser) {
       try {
-        return JSON.parse(savedUser);
+        const parsed = JSON.parse(savedUser);
+        if (parsed.role === 'super_admin') parsed.role = 'admin';
+        return parsed;
       } catch (e) {
         console.error('Failed to parse saved user', e);
       }
@@ -20,7 +22,7 @@ export const AuthProvider = ({ children }) => {
       id: 'a0000001-0000-0000-0000-000000000001',
       name: 'Mitansh Soliya',
       email: 'admin@purvaj.com',
-      role: 'super_admin',
+      role: 'admin',
       warehouse: 'Main Central Warehouse',
       avatar: null,
     };
@@ -99,7 +101,7 @@ export const AuthProvider = ({ children }) => {
             id: 'a0000001-0000-0000-0000-000000000001',
             name: 'Mitansh Soliya',
             email: email || 'admin@purvaj.com',
-            role: 'super_admin',
+            role: 'admin',
             warehouse: 'Main Central Warehouse',
           }
         : {
@@ -151,7 +153,7 @@ export const AuthProvider = ({ children }) => {
           id: 'a0000001-0000-0000-0000-000000000001',
           name: 'Mitansh Soliya',
           email: 'admin@purvaj.com',
-          role: 'super_admin',
+          role: 'admin',
           warehouse: 'Main Central Warehouse',
         }
       : {
@@ -169,9 +171,15 @@ export const AuthProvider = ({ children }) => {
           },
         };
 
+    const newToken = newRole === 'admin'
+      ? 'demo_jwt_token_purvaj_2.0'
+      : 'jwt_shop_b0000001';
+
     setUser(newUser);
+    setToken(newToken);
     try {
       localStorage.setItem('purvaj_user', JSON.stringify(newUser));
+      localStorage.setItem('purvaj_token', newToken);
     } catch (e) {
       console.error('Failed to update purvaj_user in localStorage', e);
     }

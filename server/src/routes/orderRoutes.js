@@ -31,7 +31,7 @@ router.get('/:id', orderController.getOrderById);
  * @desc    Admin / staff updates order lifecycle status (dispatched, delivered, etc.)
  * @access  Admin, Warehouse Manager
  */
-router.patch('/:id/status', authorize('super_admin', 'admin', 'warehouse_manager', 'dispatcher'), orderController.updateOrderStatus);
+router.patch('/:id/status', authorize('admin'), orderController.updateOrderStatus);
 
 /**
  * @route   PATCH /api/orders/:id/cancel

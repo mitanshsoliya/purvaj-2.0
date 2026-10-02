@@ -17,6 +17,6 @@ router.get('/', paymentController.listPayments);
  * @desc    Record wholesale payment (updates shop credit balance and ledger)
  * @access  Admin, Billing Clerk
  */
-router.post('/', authorize('super_admin', 'admin', 'billing_clerk'), paymentController.recordPayment);
+router.post('/', authorize('admin'), paymentController.recordPayment);
 
 export default router;

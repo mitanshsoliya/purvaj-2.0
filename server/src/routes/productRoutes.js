@@ -34,27 +34,9 @@ router.get('/:id', optionalAuthenticate, productController.getProductById);
  * @desc    Create new product and initialize inventory
  * @access  Admin, Warehouse Manager
  */
-router.post('/', authenticate, authorize('super_admin', 'admin', 'warehouse_manager'), productController.createProduct);
-
-/**
- * @route   PUT /api/products/:id
- * @desc    Update product details
- * @access  Admin, Warehouse Manager
- */
-router.put('/:id', authenticate, authorize('super_admin', 'admin', 'warehouse_manager'), productController.updateProduct);
-
-/**
- * @route   DELETE /api/products/:id
- * @desc    Soft-delete product
- * @access  Admin
- */
-router.delete('/:id', authenticate, authorize('super_admin', 'admin'), productController.deleteProduct);
-
-/**
- * @route   POST /api/products/:id/shop-price
- * @desc    Set custom shop pricing override
- * @access  Admin
- */
-router.post('/:id/shop-price', authenticate, authorize('super_admin', 'admin'), productController.setShopPrice);
+router.post('/', authenticate, authorize('admin'), productController.createProduct);
+router.put('/:id', authenticate, authorize('admin'), productController.updateProduct);
+router.delete('/:id', authenticate, authorize('admin'), productController.deleteProduct);
+router.post('/:id/shop-price', authenticate, authorize('admin'), productController.setShopPrice);
 
 export default router;

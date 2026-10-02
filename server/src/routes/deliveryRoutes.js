@@ -17,13 +17,7 @@ router.get('/', deliveryController.listDeliveries);
  * @desc    Assign order for delivery
  * @access  Admin, Dispatcher
  */
-router.post('/assign', authorize('super_admin', 'admin', 'dispatcher', 'warehouse_manager'), deliveryController.assignDelivery);
-
-/**
- * @route   PATCH /api/delivery/:id/status
- * @desc    Update delivery milestone status
- * @access  Admin, Dispatcher, Delivery
- */
-router.patch('/:id/status', authorize('super_admin', 'admin', 'dispatcher', 'delivery'), deliveryController.updateDeliveryStatus);
+router.post('/assign', authorize('admin'), deliveryController.assignDelivery);
+router.patch('/:id/status', authorize('admin'), deliveryController.updateDeliveryStatus);
 
 export default router;

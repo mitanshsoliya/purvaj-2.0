@@ -17,6 +17,6 @@ router.get('/', broadcastController.listBroadcasts);
  * @desc    Send announcement broadcast
  * @access  Admin
  */
-router.post('/', authorize('super_admin', 'admin'), broadcastController.createBroadcast);
+router.post('/', authorize('admin'), broadcastController.createBroadcast);
 
 export default router;

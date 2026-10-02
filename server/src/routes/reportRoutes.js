@@ -4,7 +4,7 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.use(authenticate, authorize('super_admin', 'admin'));
+router.use(authenticate, authorize('admin'));
 
 /**
  * @route   GET /api/reports/sales

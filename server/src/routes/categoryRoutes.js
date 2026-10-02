@@ -20,18 +20,8 @@ router.get('/:id', categoryController.getCategoryById);
  * @route   POST /api/categories
  * @desc    Admin creates new category
  */
-router.post('/', authenticate, authorize('super_admin', 'admin'), categoryController.createCategory);
-
-/**
- * @route   PUT /api/categories/:id
- * @desc    Admin updates category
- */
-router.put('/:id', authenticate, authorize('super_admin', 'admin'), categoryController.updateCategory);
-
-/**
- * @route   DELETE /api/categories/:id
- * @desc    Admin deactivates category
- */
-router.delete('/:id', authenticate, authorize('super_admin', 'admin'), categoryController.deleteCategory);
+router.post('/', authenticate, authorize('admin'), categoryController.createCategory);
+router.put('/:id', authenticate, authorize('admin'), categoryController.updateCategory);
+router.delete('/:id', authenticate, authorize('admin'), categoryController.deleteCategory);
 
 export default router;

@@ -21,20 +21,8 @@ router.get('/:id', offerController.getOfferById);
  * @desc    Create new promotional offer
  * @access  Admin
  */
-router.post('/', authenticate, authorize('super_admin', 'admin'), offerController.createOffer);
-
-/**
- * @route   PUT /api/offers/:id
- * @desc    Update offer
- * @access  Admin
- */
-router.put('/:id', authenticate, authorize('super_admin', 'admin'), offerController.updateOffer);
-
-/**
- * @route   DELETE /api/offers/:id
- * @desc    Deactivate offer
- * @access  Admin
- */
-router.delete('/:id', authenticate, authorize('super_admin', 'admin'), offerController.deleteOffer);
+router.post('/', authenticate, authorize('admin'), offerController.createOffer);
+router.put('/:id', authenticate, authorize('admin'), offerController.updateOffer);
+router.delete('/:id', authenticate, authorize('admin'), offerController.deleteOffer);
 
 export default router;

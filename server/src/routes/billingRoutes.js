@@ -23,13 +23,7 @@ router.get('/invoices/:id', billingController.getInvoiceById);
  * @desc    Generate invoice from order
  * @access  Admin, Billing Clerk
  */
-router.post('/invoices', authorize('super_admin', 'admin', 'billing_clerk'), billingController.createInvoice);
-
-/**
- * @route   PATCH /api/billing/invoices/:id/status
- * @desc    Update invoice status
- * @access  Admin, Billing Clerk
- */
-router.patch('/invoices/:id/status', authorize('super_admin', 'admin', 'billing_clerk'), billingController.updateInvoiceStatus);
+router.post('/invoices', authorize('admin'), billingController.createInvoice);
+router.patch('/invoices/:id/status', authorize('admin'), billingController.updateInvoiceStatus);
 
 export default router;

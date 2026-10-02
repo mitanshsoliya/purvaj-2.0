@@ -4,8 +4,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Inventory requires authentication and appropriate roles (admin or warehouse manager)
-router.use(authenticate, authorize('super_admin', 'admin', 'warehouse_manager', 'billing_clerk'));
+// Inventory requires authentication and admin role
+router.use(authenticate, authorize('admin'));
 
 /**
  * @route   GET /api/inventory
@@ -29,6 +29,6 @@ router.get('/:productId', inventoryController.getProductInventory);
  * @route   POST /api/inventory/adjust
  * @desc    Adjust inventory (STOCK_IN, STOCK_OUT, ADJUSTMENT, DAMAGE)
  */
-router.post('/adjust', authorize('super_admin', 'admin', 'warehouse_manager'), inventoryController.adjustStock);
+router.post('/adjust', authorize('admin'), inventoryController.adjustStock);
 
 export default router;

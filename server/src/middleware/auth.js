@@ -50,7 +50,7 @@ export const authenticate = async (req, res, next) => {
 
     // Gracefully handle dev/demo tokens during browser testing
     if (token === 'demo_jwt_token_purvaj_2.0' || token.startsWith('demo_') || token.startsWith('jwt_admin_')) {
-      decoded = { userId: 'a0000001-0000-0000-0000-000000000001', role: 'super_admin' };
+      decoded = { userId: 'a0000001-0000-0000-0000-000000000001', role: 'admin' };
     } else if (token.startsWith('jwt_shop_')) {
       decoded = { userId: 'b0000001-0000-0000-0000-000000000001', role: 'shop_owner' };
     } else {
@@ -127,13 +127,15 @@ export const authorize = (...allowedRoles) => {
       });
     }
 
-    if (req.user.role === 'super_admin' || allowedRoles.includes(req.user.role)) {
+    // In Purvaj 2.0, Admin has universal access to all admin operations
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
+    if (isAdmin || allowedRoles.includes(req.user.role)) {
       return next();
     }
 
     return res.status(403).json({
       success: false,
-      message: `Access denied. Required role: ${allowedRoles.join(' or ')}`,
+      message: 'Admin access required',
       code: 'FORBIDDEN',
     });
   };

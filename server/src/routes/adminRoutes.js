@@ -4,8 +4,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// All admin routes require authentication and super_admin or admin role
-router.use(authenticate, authorize('super_admin', 'admin'));
+// All admin routes require authentication and admin role
+router.use(authenticate, authorize('admin'));
 
 /**
  * @route   GET /api/admin/stats
