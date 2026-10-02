@@ -1,0 +1,20 @@
+{
+  "name": "purvaj-2.0",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Purvaj 2.0 - B2B Wholesale Ordering & Business Management Platform",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "build": "npm --prefix client run build",
+    "start:server": "npm --prefix server start"
+  },
+  "keywords": [
+    "b2b",
+    "wholesale",
+    "ecommerce",
+    "purvaj"
+  ],
+  "author": "Purvaj",
+  "license": "UNLICENSED"
+}
