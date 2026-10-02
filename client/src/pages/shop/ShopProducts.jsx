@@ -12,13 +12,16 @@ import {
   X,
   Sparkles,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Info
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useDebounce } from '../../hooks/useDebounce';
 import api from '../../services/api';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import Modal from '../../components/common/Modal';
 
 export const ShopProducts = () => {
   const { addItem, updateQuantity, items: cartItems, cartCount, grandTotal } = useCart();
@@ -32,7 +35,11 @@ export const ShopProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
   const [inStockOnly, setInStockOnly] = useState(false);
+
+  // Product detail modal state
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Local quantity buffer per product id for stepper before adding
   const [quantities, setQuantities] = useState({});
@@ -43,7 +50,7 @@ export const ShopProducts = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory, selectedBrand, searchQuery, inStockOnly]);
+  }, [selectedCategory, selectedBrand, debouncedSearch, inStockOnly]);
 
   const fetchInitialData = async () => {
     try {
@@ -69,7 +76,7 @@ export const ShopProducts = () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.append('category_id', selectedCategory);
       if (selectedBrand) params.append('brand_id', selectedBrand);
-      if (searchQuery) params.append('search', searchQuery);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       params.append('status', 'active');
       params.append('limit', '100');
 
@@ -269,7 +276,10 @@ export const ShopProducts = () => {
               >
                 <div>
                   {/* Top Image + Badges */}
-                  <div className="relative w-full aspect-video sm:aspect-square rounded-lg bg-slate-50 dark:bg-slate-850 mb-3 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-800">
+                  <div
+                    onClick={() => setSelectedProduct(p)}
+                    className="relative w-full aspect-video sm:aspect-square rounded-lg bg-slate-50 dark:bg-slate-850 mb-3 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-800 cursor-pointer"
+                  >
                     {p.image ? (
                       <img
                         src={p.image}
@@ -313,7 +323,10 @@ export const ShopProducts = () => {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                  <h3
+                    onClick={() => setSelectedProduct(p)}
+                    className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug cursor-pointer hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+                  >
                     {p.name}
                   </h3>
 
@@ -436,6 +449,127 @@ export const ShopProducts = () => {
             </Button>
           </Link>
         </div>
+      )}
+
+      {/* Product Details Modal */}
+      {selectedProduct && (
+        <Modal
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          title="Product Specifications & Details"
+          subtitle={`SKU: ${selectedProduct.sku} • HSN: ${selectedProduct.hsn_code || '1905'}`}
+          maxWidth="max-w-2xl"
+        >
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="w-full sm:w-48 h-48 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
+                {selectedProduct.image ? (
+                  <img
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Package className="w-16 h-16 text-slate-400" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wide">
+                  {selectedProduct.brand_name || 'Generic FMCG'}
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {selectedProduct.name}
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  {selectedProduct.description || 'Premium commercial wholesale product sourced directly for retail distribution.'}
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Category</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedProduct.category_name || 'General Wholesale'}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Packaging Unit</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedProduct.unit || 'Carton / Pcs'}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Min Order Qty (MOQ)</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedProduct.minimum_order_quantity || 1} {selectedProduct.unit || 'units'}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Warehouse Stock</span>
+                    <span className={`font-semibold ${parseInt(selectedProduct.available_stock ?? selectedProduct.current_stock ?? 0, 10) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
+                      {parseInt(selectedProduct.available_stock ?? selectedProduct.current_stock ?? 0, 10)} Available
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing Details Breakdown */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Exclusive Store Rate</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-brand-600 dark:text-brand-400">
+                      ₹{parseFloat(selectedProduct.final_price || selectedProduct.selling_price || 0).toFixed(2)}
+                    </span>
+                    {parseFloat(selectedProduct.standard_price || 0) > parseFloat(selectedProduct.final_price || selectedProduct.selling_price || 0) && (
+                      <span className="text-sm text-slate-400 line-through">
+                        MRP ₹{parseFloat(selectedProduct.standard_price).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Applicable GST</span>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {selectedProduct.tax_rate || 0}% ({((parseFloat(selectedProduct.final_price || selectedProduct.selling_price || 0) * (selectedProduct.tax_rate || 0)) / 100).toFixed(2)} / unit)
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Stepper & Add */}
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900">
+                  <button
+                    type="button"
+                    disabled={(quantities[selectedProduct.id] || selectedProduct.minimum_order_quantity || 1) <= (selectedProduct.minimum_order_quantity || 1)}
+                    onClick={() => handleQtyChange(selectedProduct.id, -1, selectedProduct.minimum_order_quantity || 1, selectedProduct.available_stock || 9999)}
+                    className="px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="w-12 text-center text-sm font-bold text-slate-800 dark:text-white">
+                    {quantities[selectedProduct.id] || selectedProduct.minimum_order_quantity || 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleQtyChange(selectedProduct.id, 1, selectedProduct.minimum_order_quantity || 1, selectedProduct.available_stock || 9999)}
+                    className="px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <Button
+                  variant="primary"
+                  className="flex-1 font-bold py-2.5"
+                  icon={ShoppingCart}
+                  disabled={parseInt(selectedProduct.available_stock ?? selectedProduct.current_stock ?? 0, 10) <= 0}
+                  onClick={() => {
+                    const q = quantities[selectedProduct.id] || selectedProduct.minimum_order_quantity || 1;
+                    addItem(selectedProduct, q);
+                    setSelectedProduct(null);
+                  }}
+                >
+                  Add {quantities[selectedProduct.id] || selectedProduct.minimum_order_quantity || 1} to Cart (₹{(parseFloat(selectedProduct.final_price || selectedProduct.selling_price || 0) * (quantities[selectedProduct.id] || selectedProduct.minimum_order_quantity || 1)).toFixed(2)})
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

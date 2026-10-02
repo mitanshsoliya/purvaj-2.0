@@ -26,8 +26,8 @@ export const MobileBottomNav = ({ cartCount = 0 }) => {
   const mainNavItems = [
     { label: 'Home', to: '/shop', icon: Home, exact: true },
     { label: 'Products', to: '/shop/products', icon: Package },
-    { label: 'Orders', to: '/shop/orders', icon: ShoppingBag },
     { label: 'Cart', to: '/shop/cart', icon: ShoppingCart, badge: cartCount },
+    { label: 'Orders', to: '/shop/orders', icon: ShoppingBag },
   ];
 
   const moreItems = [

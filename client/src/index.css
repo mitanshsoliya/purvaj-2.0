@@ -17,6 +17,12 @@
   body {
     overflow-x: hidden;
   }
+
+  /* Global Accessible Keyboard Focus Outline */
+  *:focus-visible {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 2px !important;
+  }
 }
 
 /* Custom subtle scrollbar */

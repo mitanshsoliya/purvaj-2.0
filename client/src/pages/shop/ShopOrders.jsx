@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
+import { useDebounce } from '../../hooks/useDebounce';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -43,6 +44,7 @@ export const ShopOrders = () => {
 
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 350);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,14 +55,14 @@ export const ShopOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [activeTab, searchQuery]);
+  }, [activeTab, debouncedSearch]);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (activeTab !== 'all') params.append('status', activeTab);
-      if (searchQuery) params.append('search', searchQuery);
+      if (debouncedSearch) params.append('search', debouncedSearch);
       params.append('limit', '50');
 
       const res = await api.get(`/orders?${params.toString()}`);

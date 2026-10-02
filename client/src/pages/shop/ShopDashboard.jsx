@@ -26,6 +26,7 @@ import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import { PageSkeleton } from '../../components/common/Skeleton';
 
 export const ShopDashboard = () => {
   const { user } = useAuth();
@@ -122,6 +123,10 @@ export const ShopDashboard = () => {
         return <Badge variant="neutral">Pending</Badge>;
     }
   };
+
+  if (loading) {
+    return <PageSkeleton />;
+  }
 
   return (
     <div className="space-y-5 sm:space-y-6">
