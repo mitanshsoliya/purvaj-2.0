@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { ShieldCheck, Store } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ShopMobileHeader from './ShopMobileHeader';
@@ -10,20 +11,49 @@ export const AppShell = ({ role = 'admin' }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, switchRole } = useAuth();
 
   const isShop = role === 'shop';
 
   return (
     <div className="min-h-screen bg-workspace-light dark:bg-workspace-dark text-slate-800 dark:text-slate-100 flex flex-col antialiased">
-      {/* Top Banner on Dev / Test environment */}
-      <div className="bg-navy-950 text-slate-300 text-[11px] py-1 px-4 text-center font-medium border-b border-navy-800 flex items-center justify-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
-        <span>PURVAJ 2.0 WHOLESALE SUITE</span>
-        <span className="text-slate-500">•</span>
-        <span className="text-slate-400">Main Central Warehouse Hub</span>
-        <span className="text-slate-500">•</span>
-        <span className="text-brand-400 font-semibold uppercase">{isShop ? 'Shop Portal' : 'Admin Control'}</span>
+      {/* Top Banner with Direct Dashboard Switcher */}
+      <div className="bg-navy-950 text-slate-300 text-[11px] py-1.5 px-4 font-medium border-b border-navy-800 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
+          <span className="font-bold text-white tracking-wide">PURVAJ 2.0</span>
+          <span className="text-slate-500">•</span>
+          <span className="text-slate-300 hidden sm:inline">Central Warehouse Hub</span>
+          <span className="text-slate-500 hidden sm:inline">•</span>
+          <span className="text-brand-400 font-semibold uppercase">{isShop ? 'Shop Retail Portal' : 'Admin Control Hub'}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (isShop) {
+              switchRole('admin');
+              navigate('/admin');
+            } else {
+              switchRole('shop');
+              navigate('/shop');
+            }
+          }}
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-brand-500/20 hover:bg-brand-500/40 text-brand-300 border border-brand-500/40 transition-all hover:scale-[1.02]"
+        >
+          {isShop ? (
+            <>
+              <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
+              <span>Switch to Admin Dashboard →</span>
+            </>
+          ) : (
+            <>
+              <Store className="w-3.5 h-3.5 text-brand-400" />
+              <span>Switch to Shop Portal →</span>
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">

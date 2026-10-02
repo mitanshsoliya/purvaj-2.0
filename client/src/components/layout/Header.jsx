@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Bell, 
   Menu, 
@@ -7,9 +8,9 @@ import {
   Building2, 
   ShieldCheck, 
   ArrowLeftRight, 
-  Store,
-  Warehouse,
-  ChevronDown
+  Store, 
+  Warehouse, 
+  ChevronDown 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
@@ -23,10 +24,14 @@ export const Header = ({
   searchPlaceholder = 'Search Purvaj 2.0...',
   isShopPortal = false,
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAdmin, isShop, logout, switchRole } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+
+  const isCurrentlyInShop = location.pathname.startsWith('/shop') || isShopPortal;
 
   const notifications = [
     {
@@ -96,15 +101,32 @@ export const Header = ({
             </div>
           )}
 
-          {/* Quick Demo Switcher */}
+          {/* Quick Portal Switcher (Admin <-> Shop) */}
           <button
             type="button"
-            onClick={() => switchRole(isAdmin ? 'shop' : 'admin')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-brand-500 transition-colors"
-            title="Switch between Admin & Shop Dashboard"
+            onClick={() => {
+              if (isCurrentlyInShop) {
+                switchRole('admin');
+                navigate('/admin');
+              } else {
+                switchRole('shop');
+                navigate('/shop');
+              }
+            }}
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-brand-500 transition-colors shadow-soft-sm"
+            title={isCurrentlyInShop ? 'Switch to Admin Operations Dashboard' : 'Switch to Wholesale Shop Portal'}
           >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-brand-500" />
-            <span>{isAdmin ? 'View as Shop' : 'View as Admin'}</span>
+            {isCurrentlyInShop ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                <span>Open Admin Dashboard</span>
+              </>
+            ) : (
+              <>
+                <Store className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                <span>Open Shop Portal</span>
+              </>
+            )}
           </button>
 
           {/* Theme Toggle */}
@@ -227,13 +249,19 @@ export const Header = ({
                       type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
-                        switchRole(user?.role === 'admin' ? 'shop' : 'admin');
+                        if (isCurrentlyInShop) {
+                          switchRole('admin');
+                          navigate('/admin');
+                        } else {
+                          switchRole('shop');
+                          navigate('/shop');
+                        }
                       }}
                       className="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5"
                     >
                       <ArrowLeftRight className="w-4 h-4 text-brand-500" />
                       <span>
-                        Switch to {user?.role === 'admin' ? 'Shop Portal' : 'Admin Portal'}
+                        Switch to {isCurrentlyInShop ? 'Admin Portal' : 'Shop Portal'}
                       </span>
                     </button>
 

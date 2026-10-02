@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, LogOut, ArrowLeftRight, Store } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Search, User, LogOut, ArrowLeftRight, Store, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BrandLogo from './BrandLogo';
 import ThemeToggle from './ThemeToggle';
 import SearchBar from '../common/SearchBar';
 
 export const ShopMobileHeader = ({ onSearchClick }) => {
+  const navigate = useNavigate();
   const { user, switchRole, logout } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -80,11 +82,12 @@ export const ShopMobileHeader = ({ onSearchClick }) => {
               onClick={() => {
                 setShowProfileModal(false);
                 switchRole('admin');
+                navigate('/admin');
               }}
-              className="w-full text-left text-xs text-slate-700 dark:text-slate-300 flex items-center gap-2 py-1.5 hover:text-brand-600"
+              className="w-full text-left text-xs font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-2 py-2 px-2 rounded-lg bg-brand-50 dark:bg-brand-950/50 hover:bg-brand-100"
             >
-              <ArrowLeftRight className="w-4 h-4 text-brand-500" />
-              Switch to Admin Dashboard
+              <ShieldCheck className="w-4 h-4 text-brand-500" />
+              Open Admin Dashboard
             </button>
             <button
               onClick={() => {

@@ -85,26 +85,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   const switchRole = (newRole) => {
-    if (newRole === 'admin') {
-      setUser({
-        id: 'usr_admin_01',
-        name: 'Purvaj Admin',
-        email: 'admin@purvaj.com',
-        role: 'admin',
-        warehouse: 'Main Central Warehouse',
-      });
-    } else {
-      setUser({
-        id: 'usr_shop_102',
-        name: 'Ramesh Patel',
-        shopName: 'Shree Krishna Traders',
-        email: 'sk.traders@purvaj.shop',
-        role: 'shop',
-        gstin: '24AAACP1234M1Z2',
-        creditLimit: 250000,
-        city: 'Ahmedabad',
-      });
+    const newUser = newRole === 'admin'
+      ? {
+          id: 'usr_admin_01',
+          name: 'Purvaj Admin',
+          email: 'admin@purvaj.com',
+          role: 'admin',
+          warehouse: 'Main Central Warehouse',
+        }
+      : {
+          id: 'usr_shop_102',
+          name: 'Ramesh Patel',
+          shopName: 'Shree Krishna Traders',
+          email: 'sk.traders@purvaj.shop',
+          role: 'shop',
+          gstin: '24AAACP1234M1Z2',
+          creditLimit: 250000,
+          city: 'Ahmedabad',
+        };
+
+    setUser(newUser);
+    try {
+      localStorage.setItem('purvaj_user', JSON.stringify(newUser));
+    } catch (e) {
+      console.error('Failed to update purvaj_user in localStorage', e);
     }
+    return newUser;
   };
 
   return (

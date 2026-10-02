@@ -37,7 +37,7 @@ export const Login = () => {
       const res = await login({ email, password, role: activeTab });
       if (res.success) {
         const from = location.state?.from?.pathname;
-        if (from) {
+        if (from && (activeTab === 'admin' ? from.startsWith('/admin') : from.startsWith('/shop'))) {
           navigate(from, { replace: true });
         } else {
           navigate(activeTab === 'admin' ? '/admin' : '/shop', { replace: true });
