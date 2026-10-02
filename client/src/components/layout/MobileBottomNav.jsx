@@ -16,10 +16,12 @@ import {
   HelpCircle,
   BellRing
 } from 'lucide-react';
+import { useSocket } from '../../context/SocketContext';
 import Drawer from '../common/Drawer';
 
 export const MobileBottomNav = ({ cartCount = 0 }) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const { unreadCount } = useSocket();
 
   const mainNavItems = [
     { label: 'Home', to: '/shop', icon: Home, exact: true },
@@ -29,12 +31,12 @@ export const MobileBottomNav = ({ cartCount = 0 }) => {
   ];
 
   const moreItems = [
+    { label: 'Notifications', to: '/shop/notifications', icon: BellRing, desc: 'Live announcements & alerts', badge: unreadCount },
     { label: 'Quick Bulk Order', to: '/shop/quick-order', icon: Zap, desc: 'Instant SKU bulk entry' },
     { label: 'Quick Reorder', to: '/shop/reorder', icon: Repeat, desc: 'Order from past invoices' },
     { label: 'Invoices & Bills', to: '/shop/bills', icon: FileText, desc: 'Download tax invoices' },
     { label: 'Payments', to: '/shop/payments', icon: DollarSign, desc: 'History and bank slips' },
     { label: 'Outstanding Ledger', to: '/shop/outstanding', icon: Scale, desc: 'Udhaar balance and statement' },
-    { label: 'Notifications', to: '/shop/notifications', icon: BellRing, desc: 'Broadcasts and order updates' },
     { label: 'Exclusive Offers', to: '/shop/offers', icon: Gift, desc: 'Wholesale tiered discounts' },
     { label: 'Shop Profile', to: '/shop/profile', icon: User, desc: 'GST, address, and credit limit' },
     { label: 'Help & Support', to: '/shop/help', icon: HelpCircle, desc: 'Contact warehouse dispatch' },

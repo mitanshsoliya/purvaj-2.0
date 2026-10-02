@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { CartProvider } from './context/CartContext';
 import AppRoutes from './routes/AppRoutes';
 
@@ -22,11 +23,13 @@ export function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <CartProvider>
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </CartProvider>
+            <SocketProvider>
+              <CartProvider>
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </CartProvider>
+            </SocketProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

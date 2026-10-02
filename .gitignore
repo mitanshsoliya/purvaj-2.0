@@ -22,3 +22,7 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Uploads
+server/uploads/*
+!server/uploads/.gitkeep

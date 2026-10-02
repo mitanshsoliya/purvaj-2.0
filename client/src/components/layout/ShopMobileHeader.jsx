@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Search, User, LogOut, ArrowLeftRight, Store, ShieldCheck, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useSocket } from '../../context/SocketContext';
 import BrandLogo from './BrandLogo';
 import ThemeToggle from './ThemeToggle';
 import SearchBar from '../common/SearchBar';
@@ -11,6 +12,7 @@ export const ShopMobileHeader = ({ onSearchClick }) => {
   const navigate = useNavigate();
   const { user, switchRole, logout } = useAuth();
   const { cartCount } = useCart();
+  const { unreadCount } = useSocket();
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [query, setQuery] = useState('');
@@ -49,6 +51,11 @@ export const ShopMobileHeader = ({ onSearchClick }) => {
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold bg-rose-500 text-white flex items-center justify-center leading-none shadow-sm animate-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
 
           <button
