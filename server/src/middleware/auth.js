@@ -40,12 +40,17 @@ export const verifyRefreshToken = (token) => {
  */
 export const authenticate = async (req, res, next) => {
   try {
+    let token = null;
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw AppError.unauthorized('Access token required');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (req.query && req.query.token) {
+      token = req.query.token;
     }
 
-    const token = authHeader.split(' ')[1];
+    if (!token) {
+      throw AppError.unauthorized('Access token required');
+    }
     let decoded;
 
     // Gracefully handle dev/demo tokens during browser testing

@@ -17,6 +17,7 @@ router.get('/invoices', billingController.listInvoices);
  * @desc    Get invoice details with order items
  */
 router.get('/invoices/:id', billingController.getInvoiceById);
+router.get('/invoices/:id/print', billingController.getPrintableInvoice);
 
 /**
  * @route   POST /api/billing/invoices

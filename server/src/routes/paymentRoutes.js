@@ -13,6 +13,13 @@ router.use(authenticate);
 router.get('/', paymentController.listPayments);
 
 /**
+ * @route   GET /api/payments/:id/receipt
+ * @desc    Generate printable payment receipt
+ */
+router.get('/:id/receipt', paymentController.getPaymentReceipt);
+router.get('/:id/print', paymentController.getPrintablePaymentReceipt);
+
+/**
  * @route   POST /api/payments
  * @desc    Record wholesale payment (updates shop credit balance and ledger)
  * @access  Admin, Billing Clerk

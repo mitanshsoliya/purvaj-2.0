@@ -24,7 +24,7 @@ export const createOrder = async (req, res, next) => {
   const client = await pool.connect();
   try {
     const user = req.user;
-    const { items, notes, shop_id: requestedShopId } = req.body;
+    const { items, notes, shop_id: requestedShopId, payment_method } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return sendError(res, { message: 'Order must contain at least one item', statusCode: 400 });
@@ -163,6 +163,30 @@ export const createOrder = async (req, res, next) => {
     totalTax = +totalTax.toFixed(2);
     const orderTotal = +(subtotal + totalTax).toFixed(2);
 
+    // 2.1 Apply Configured Credit / Udhaar Rules
+    const creditLimit = parseFloat(shop.credit_limit || 0);
+    const currentCreditUsed = parseFloat(shop.credit_used || 0);
+    const availableCredit = Math.max(0, +(creditLimit - currentCreditUsed).toFixed(2));
+
+    // If order is placed on credit/udhaar and shop has a credit limit configured
+    if (creditLimit > 0 && (payment_method === 'credit' || !payment_method)) {
+      if (currentCreditUsed + orderTotal > creditLimit) {
+        await client.query('ROLLBACK');
+        return sendError(res, {
+          message: `Order total (₹${orderTotal.toLocaleString('en-IN')}) exceeds available credit limit (₹${availableCredit.toLocaleString('en-IN')}). Please pay via Bank Transfer / Cash or clear pending udhaar.`,
+          statusCode: 400,
+          code: 'CREDIT_LIMIT_EXCEEDED',
+          data: {
+            credit_limit: creditLimit,
+            credit_used: currentCreditUsed,
+            available_credit: availableCredit,
+            order_total: orderTotal,
+          },
+        });
+      }
+    }
+
+    const orderNotes = notes || (payment_method ? `Payment Method: ${payment_method.toUpperCase()}` : null);
     const orderNumber = generateOrderNumber();
 
     // 3. Insert order
@@ -172,7 +196,7 @@ export const createOrder = async (req, res, next) => {
         total, payment_status, order_status, notes, placed_by
       ) VALUES ($1, $2, $3, 0, $4, 0, $5, 'unpaid', 'pending', $6, $7)
       RETURNING *`,
-      [orderNumber, targetShopId, subtotal, totalTax, orderTotal, notes || null, user.id]
+      [orderNumber, targetShopId, subtotal, totalTax, orderTotal, orderNotes, user.id]
     );
 
     const order = orderRes.rows[0];

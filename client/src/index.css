@@ -50,3 +50,53 @@
 .focus-ring {
   @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
 }
+
+/* ============================================================
+   PRINT STYLES FOR B2B INVOICES & THERMAL RECEIPTS
+   ============================================================ */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Hide navigation, headers, floating bars, buttons, and modals outside print area */
+  header, nav, aside, button, .no-print, [role="navigation"], .fixed {
+    display: none !important;
+  }
+
+  /* Show only the active printable target */
+  .printable-area {
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  /* Thermal Receipt Mode: 80mm roll printer */
+  .thermal-receipt-mode {
+    width: 78mm !important;
+    max-width: 78mm !important;
+    font-size: 9pt !important;
+    line-height: 1.25 !important;
+  }
+
+  @page :left {
+    margin: 10mm;
+  }
+  @page :right {
+    margin: 10mm;
+  }
+}
