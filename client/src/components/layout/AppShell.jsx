@@ -6,6 +6,7 @@ import Header from './Header';
 import ShopMobileHeader from './ShopMobileHeader';
 import MobileBottomNav from './MobileBottomNav';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 
 export const AppShell = ({ role = 'admin' }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -13,6 +14,7 @@ export const AppShell = ({ role = 'admin' }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, switchRole } = useAuth();
+  const { cartCount } = useCart();
 
   const isShop = role === 'shop';
 
@@ -102,7 +104,7 @@ export const AppShell = ({ role = 'admin' }) => {
           </main>
 
           {/* Mobile Bottom Navigation for Shop */}
-          {isShop && <MobileBottomNav cartCount={0} />}
+          {isShop && <MobileBottomNav cartCount={cartCount} />}
         </div>
       </div>
     </div>

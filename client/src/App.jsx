@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import AppRoutes from './routes/AppRoutes';
 
 const queryClient = new QueryClient({
@@ -21,9 +22,11 @@ export function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
+            <CartProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </CartProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

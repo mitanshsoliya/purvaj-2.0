@@ -13,10 +13,20 @@ export const listOffers = async (req, res, next) => {
     const params = [];
     const conditions = [];
 
-    // If active_only or not admin, only show active current offers
+    // If not admin, only show active current offers targeted to this shop or universal
     const isAdmin = ['super_admin', 'admin'].includes(user?.role);
     if (!isAdmin || active_only === 'true') {
       conditions.push(`o.status = 'active' AND o.start_at <= NOW() AND o.end_at >= NOW()`);
+      const shopId = user?.shop?.id || user?.shop?.shop_id;
+      if (shopId) {
+        params.push(shopId);
+        conditions.push(`(
+          NOT EXISTS (SELECT 1 FROM offer_shops WHERE offer_id = o.id)
+          OR EXISTS (SELECT 1 FROM offer_shops WHERE offer_id = o.id AND shop_id = $${params.length})
+        )`);
+      } else {
+        conditions.push(`NOT EXISTS (SELECT 1 FROM offer_shops WHERE offer_id = o.id)`);
+      }
     } else if (status) {
       params.push(status);
       conditions.push(`o.status = $${params.length}`);

@@ -1,95 +1,426 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { Store, MapPin, FileText, Phone, Mail, ShieldCheck } from 'lucide-react';
+import Badge from '../../components/common/Badge';
+import {
+  Store,
+  MapPin,
+  FileText,
+  Phone,
+  Mail,
+  ShieldCheck,
+  Lock,
+  Users,
+  CheckCircle2,
+  Save,
+  KeyRound,
+  Plus,
+  Trash2
+} from 'lucide-react';
 
 export const ShopProfile = () => {
   const { user } = useAuth();
+  const { addToast } = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Shop details form
+  const [formData, setFormData] = useState({
+    shop_name: '',
+    owner_name: '',
+    mobile: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    gstin: '',
+    credit_limit: 250000,
+    payment_terms: '15 Days',
+    status: 'active',
+  });
+
+  // Password change form
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  // Staff members
+  const [staff, setStaff] = useState([
+    { id: 1, name: 'Suresh Patel', role: 'Store Manager', mobile: '9898002001' },
+    { id: 2, name: 'Ravi Kumar', role: 'Billing Operator', mobile: '9898002002' },
+  ]);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffMobile, setNewStaffMobile] = useState('');
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/shops/profile');
+      if (res.data?.success && res.data?.data?.shop) {
+        const s = res.data.data.shop;
+        setFormData({
+          shop_name: s.shop_name || '',
+          owner_name: s.owner_name || '',
+          mobile: s.mobile || '',
+          email: s.email || '',
+          address: s.address || '',
+          city: s.city || '',
+          state: s.state || 'Gujarat',
+          pincode: s.pincode || '',
+          gstin: s.gstin || '',
+          credit_limit: parseFloat(s.credit_limit || 250000),
+          payment_terms: s.payment_terms || '15 Days',
+          status: s.status || 'active',
+        });
+      } else if (user?.shop) {
+        setFormData((prev) => ({
+          ...prev,
+          shop_name: user.shop.shop_name || user.shopName || '',
+          owner_name: user.name || '',
+          email: user.email || '',
+          mobile: user.mobile || '',
+          city: user.shop.city || '',
+          gstin: user.shop.gstin || user.gstin || '',
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load profile', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await api.put('/shops/profile', {
+        shop_name: formData.shop_name,
+        owner_name: formData.owner_name,
+        mobile: formData.mobile,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+      });
+
+      if (res.data?.success) {
+        addToast('Shop details updated successfully!', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to update shop details', err);
+      addToast(err.response?.data?.message || 'Update failed', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      addToast('New passwords do not match', 'warning');
+      return;
+    }
+    if (passwords.newPassword.length < 6) {
+      addToast('Password must be at least 6 characters', 'warning');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await api.post('/auth/change-password', {
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+      });
+      if (res.data?.success) {
+        addToast('Password changed successfully!', 'success');
+        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    } catch (err) {
+      console.error('Failed to change password', err);
+      addToast(err.response?.data?.message || 'Password update failed', 'error');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleAddStaff = (e) => {
+    e.preventDefault();
+    if (!newStaffName || !newStaffMobile) return;
+    setStaff((prev) => [
+      ...prev,
+      { id: Date.now(), name: newStaffName, role: 'Store Clerk', mobile: newStaffMobile },
+    ]);
+    setNewStaffName('');
+    setNewStaffMobile('');
+    addToast('Staff member added', 'success');
+  };
+
+  const handleRemoveStaff = (id) => {
+    setStaff((prev) => prev.filter((s) => s.id !== id));
+    addToast('Staff member removed', 'info');
+  };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 shadow-soft">
+    <div className="space-y-6 max-w-4xl mx-auto pb-24">
+      {/* Header Profile Identity */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-soft">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-bold text-xl shadow-soft">
+            <div className="w-14 h-14 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-bold text-xl shadow-soft flex-shrink-0">
               <Store className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {user?.shopName || 'Shree Krishna Traders'}
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                  {formData.shop_name || 'Shree Krishna Traders'}
                 </h1>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                  Active Retailer
-                </span>
+                <Badge variant="success">Approved Retailer</Badge>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Retailer Account ID: <span className="font-mono">{user?.id || 'usr_shop_102'}</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Owner: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.owner_name || user?.name}</span> • GSTIN: <span className="font-mono text-slate-700 dark:text-slate-300">{formData.gstin || '24AAACP1234M1Z2'}</span>
               </p>
             </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800/40 text-left sm:text-right">
+            <span className="text-[10px] text-brand-600 dark:text-brand-400 font-bold uppercase tracking-wider block">
+              Trading Credit Limit
+            </span>
+            <span className="text-lg font-bold text-slate-900 dark:text-white">
+              ₹{formData.credit_limit.toLocaleString('en-IN')}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card title="Business Details" subtitle="Verified KYC legal credentials">
-          <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-300">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span className="text-slate-400">Legal Business Name</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                {user?.shopName || 'Shree Krishna Traders'}
-              </span>
+        {/* Form: Shop Information & Address */}
+        <Card title="Shop Information & Address" subtitle="Storefront details for delivery & billing">
+          <form onSubmit={handleUpdateProfile} className="space-y-3.5 text-xs">
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                Shop / Store Name
+              </label>
+              <input
+                type="text"
+                value={formData.shop_name}
+                onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
+                required
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              />
             </div>
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span className="text-slate-400">GSTIN</span>
-              <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
-                {user?.gstin || '24AAACP1234M1Z2'}
-              </span>
+
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                Owner / Contact Person
+              </label>
+              <input
+                type="text"
+                value={formData.owner_name}
+                onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+                required
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              />
             </div>
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span className="text-slate-400">Owner / Representative</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                {user?.name || 'Ramesh Patel'}
-              </span>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  Registered Mobile
+                </label>
+                <input
+                  type="text"
+                  value={formData.mobile}
+                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  GSTIN (Read Only)
+                </label>
+                <input
+                  type="text"
+                  value={formData.gstin}
+                  readOnly
+                  disabled
+                  className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-slate-500 font-mono"
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Registered Email</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                {user?.email || 'sk.traders@purvaj.shop'}
-              </span>
+
+            <div>
+              <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                Storefront Address
+              </label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="Shop No., Market / Street..."
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              />
             </div>
-          </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  Pincode
+                </label>
+                <input
+                  type="text"
+                  value={formData.pincode}
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              icon={Save}
+              disabled={saving}
+              className="w-full font-bold shadow-soft"
+            >
+              {saving ? 'Saving...' : 'Save Profile Changes'}
+            </Button>
+          </form>
         </Card>
 
-        <Card title="Credit & Financial Terms" subtitle="Approved wholesale trading limit">
-          <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-300">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span className="text-slate-400">Approved Credit Limit</span>
-              <span className="font-bold text-slate-900 dark:text-white text-sm">
-                ₹2,50,000
-              </span>
+        {/* Change Password & Staff Section */}
+        <div className="space-y-6">
+          {/* Change Password Form */}
+          <Card title="Security & Password" subtitle="Update your portal login credentials">
+            <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={passwords.currentPassword}
+                  onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                  required
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwords.newPassword}
+                  onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                  required
+                  placeholder="At least 6 characters"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwords.confirmPassword}
+                  onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                  required
+                  placeholder="Repeat new password"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="secondary"
+                size="sm"
+                icon={KeyRound}
+                disabled={changingPassword}
+                className="w-full font-bold"
+              >
+                {changingPassword ? 'Updating Password...' : 'Update Password'}
+              </Button>
+            </form>
+          </Card>
+
+          {/* Shop Staff Contacts */}
+          <Card title="Authorized Shop Staff" subtitle="Store staff authorized to accept deliveries">
+            <div className="space-y-3">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {staff.map((s) => (
+                  <div key={s.id} className="py-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        {s.role} • {s.mobile}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStaff(s.id)}
+                      className="p-1 rounded text-slate-400 hover:text-rose-600"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleAddStaff} className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                <input
+                  type="text"
+                  value={newStaffName}
+                  onChange={(e) => setNewStaffName(e.target.value)}
+                  placeholder="Staff Name"
+                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  value={newStaffMobile}
+                  onChange={(e) => setNewStaffMobile(e.target.value)}
+                  placeholder="Mobile"
+                  className="w-28 px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                />
+                <Button type="submit" variant="secondary" size="sm" icon={Plus}>
+                  Add
+                </Button>
+              </form>
             </div>
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span className="text-slate-400">Payment Due Term</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                Net 15 Days
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <span className="text-slate-400">Assigned Warehouse</span>
-              <span className="font-semibold text-brand-600 dark:text-brand-400">
-                Main Central Warehouse (Purvaj Hub)
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Wholesale Tier</span>
-              <span className="font-semibold text-amber-600 dark:text-amber-400">
-                Gold Retailer Tier
-              </span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );

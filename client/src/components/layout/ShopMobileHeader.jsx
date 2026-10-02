@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, User, LogOut, ArrowLeftRight, Store, ShieldCheck } from 'lucide-react';
+import { Bell, Search, User, LogOut, ArrowLeftRight, Store, ShieldCheck, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import BrandLogo from './BrandLogo';
 import ThemeToggle from './ThemeToggle';
 import SearchBar from '../common/SearchBar';
@@ -9,6 +10,7 @@ import SearchBar from '../common/SearchBar';
 export const ShopMobileHeader = ({ onSearchClick }) => {
   const navigate = useNavigate();
   const { user, switchRole, logout } = useAuth();
+  const { cartCount } = useCart();
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [query, setQuery] = useState('');
@@ -38,6 +40,29 @@ export const ShopMobileHeader = ({ onSearchClick }) => {
             aria-label="Toggle mobile search"
           >
             <Search className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/shop/notifications')}
+            className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+            aria-label="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/shop/cart')}
+            className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+            aria-label="Cart"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-brand-600 text-white leading-tight">
+                {cartCount}
+              </span>
+            )}
           </button>
 
           <ThemeToggle />
