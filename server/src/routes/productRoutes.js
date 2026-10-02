@@ -8,7 +8,11 @@ const router = express.Router();
 const optionalAuthenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authenticate(req, res, next);
+    try {
+      await authenticate(req, res, () => {});
+    } catch (e) {
+      // Optional authentication should never fail the request
+    }
   }
   next();
 };

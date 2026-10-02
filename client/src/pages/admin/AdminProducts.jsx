@@ -183,6 +183,7 @@ export const AdminProducts = () => {
 
       if (prodsRes.data?.data?.products) {
         setProducts(prodsRes.data.data.products);
+        setNetworkError(false);
       }
       if (catsRes.data?.data?.categories) {
         setCategories(catsRes.data.data.categories);
@@ -191,8 +192,10 @@ export const AdminProducts = () => {
         setBrands(brandsRes.data.data.brands);
       }
     } catch (err) {
-      console.warn('Backend server offline or network error, displaying fallback products:', err.message);
-      setNetworkError(true);
+      console.warn('Backend server check:', err.message);
+      if (!err.response) {
+        setNetworkError(true);
+      }
       if (products.length === 0) {
         setProducts(FALLBACK_PRODUCTS);
         setCategories([
