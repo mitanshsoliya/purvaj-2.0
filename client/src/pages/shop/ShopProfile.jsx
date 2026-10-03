@@ -5,6 +5,7 @@ import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import { PageSkeleton } from '../../components/common/Skeleton';
 import {
   Store,
   MapPin,
@@ -13,15 +14,14 @@ import {
   Mail,
   ShieldCheck,
   Lock,
-  Users,
-  CheckCircle2,
   Save,
   KeyRound,
-  Plus,
-  Trash2,
   Bell,
   Smartphone,
-  MessageSquare
+  MessageSquare,
+  CheckCircle2,
+  IndianRupee,
+  RefreshCw
 } from 'lucide-react';
 
 export const ShopProfile = () => {
@@ -31,6 +31,7 @@ export const ShopProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   // Shop details form
   const [formData, setFormData] = useState({
@@ -40,10 +41,12 @@ export const ShopProfile = () => {
     email: '',
     address: '',
     city: '',
-    state: '',
+    state: 'Gujarat',
     pincode: '',
     gstin: '',
     credit_limit: 250000,
+    credit_used: 0,
+    available_credit: 250000,
     payment_terms: '15 Days',
     status: 'active',
   });
@@ -57,7 +60,6 @@ export const ShopProfile = () => {
     payment_reminders: true,
     promotional_offers: true,
   });
-  const [savingPrefs, setSavingPrefs] = useState(false);
 
   // Password change form
   const [passwords, setPasswords] = useState({
@@ -66,82 +68,95 @@ export const ShopProfile = () => {
     confirmPassword: '',
   });
 
-  // Staff members
-  const [staff, setStaff] = useState([
-    { id: 1, name: 'Suresh Patel', role: 'Store Manager', mobile: '9898002001' },
-    { id: 2, name: 'Ravi Kumar', role: 'Billing Operator', mobile: '9898002002' },
-  ]);
-  const [newStaffName, setNewStaffName] = useState('');
-  const [newStaffMobile, setNewStaffMobile] = useState('');
-
   useEffect(() => {
-    fetchProfile();
-    fetchPreferences();
+    fetchInitialData();
   }, []);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    try {
+      await Promise.allSettled([fetchProfile(), fetchPreferences()]);
+    } catch (err) {
+      console.error('Failed to load shop profile data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchPreferences = async () => {
     try {
       const res = await api.get('/shops/notification-preferences');
       if (res.data?.success && res.data?.data?.preferences) {
-        setPrefData(res.data.data.preferences);
+        const p = res.data.data.preferences;
+        setPrefData({
+          channel_in_app: p.channel_in_app !== undefined ? Boolean(p.channel_in_app) : true,
+          channel_whatsapp: p.channel_whatsapp !== undefined ? Boolean(p.channel_whatsapp) : true,
+          channel_sms: p.channel_sms !== undefined ? Boolean(p.channel_sms) : true,
+          order_updates: p.order_updates !== undefined ? Boolean(p.order_updates) : true,
+          payment_reminders: p.payment_reminders !== undefined ? Boolean(p.payment_reminders) : true,
+          promotional_offers: p.promotional_offers !== undefined ? Boolean(p.promotional_offers) : true,
+        });
       }
     } catch (e) {
-      console.error('Failed to load notification preferences', e);
+      console.warn('Failed to load notification preferences, using defaults', e);
     }
   };
-
-  const handleSavePreferences = async (e) => {
-    e.preventDefault();
-    setSavingPrefs(true);
-    try {
-      const res = await api.put('/shops/notification-preferences', prefData);
-      if (res.data?.success) {
-        addToast('Notification preferences saved successfully', 'success');
-      }
-    } catch (e) {
-      console.error('Save preferences error', e);
-      addToast('Failed to save notification preferences', 'error');
-    } finally {
-      setSavingPrefs(false);
-    }
-  };
-
 
   const fetchProfile = async () => {
-    setLoading(true);
     try {
       const res = await api.get('/shops/profile');
       if (res.data?.success && res.data?.data?.shop) {
         const s = res.data.data.shop;
+        const limit = parseFloat(s.credit_limit || 250000);
+        const used = parseFloat(s.credit_used || 0);
+
         setFormData({
           shop_name: s.shop_name || '',
-          owner_name: s.owner_name || '',
-          mobile: s.mobile || '',
-          email: s.email || '',
+          owner_name: s.owner_name || s.owner_account_name || user?.name || '',
+          mobile: s.mobile || user?.mobile || '',
+          email: s.email || s.owner_account_email || user?.email || '',
           address: s.address || '',
           city: s.city || '',
           state: s.state || 'Gujarat',
           pincode: s.pincode || '',
           gstin: s.gstin || '',
-          credit_limit: parseFloat(s.credit_limit || 250000),
-          payment_terms: s.payment_terms || '15 Days',
+          credit_limit: limit,
+          credit_used: used,
+          available_credit: Math.max(0, limit - used),
+          payment_terms: s.payment_terms ? `${s.payment_terms} Days` : '15 Days',
           status: s.status || 'active',
         });
       } else if (user?.shop) {
+        const s = user.shop;
+        const limit = parseFloat(s.credit_limit || 250000);
+        const used = parseFloat(s.credit_used || 0);
+
         setFormData((prev) => ({
           ...prev,
-          shop_name: user.shop.shop_name || user.shopName || '',
+          shop_name: s.shop_name || user.shopName || '',
           owner_name: user.name || '',
           email: user.email || '',
           mobile: user.mobile || '',
-          city: user.shop.city || '',
-          gstin: user.shop.gstin || user.gstin || '',
+          city: s.city || '',
+          gstin: s.gstin || user.gstin || '',
+          credit_limit: limit,
+          credit_used: used,
+          available_credit: Math.max(0, limit - used),
         }));
       }
     } catch (err) {
-      console.error('Failed to load profile', err);
-    } finally {
-      setLoading(false);
+      console.warn('Profile API fallback to local user context', err);
+      if (user) {
+        setFormData((prev) => ({
+          ...prev,
+          shop_name: user.shop?.shop_name || user.shopName || 'Retailer Store',
+          owner_name: user.name || '',
+          email: user.email || '',
+          mobile: user.mobile || '',
+          city: user.shop?.city || '',
+          gstin: user.shop?.gstin || user.gstin || '24AAACP1234M1Z2',
+        }));
+      }
     }
   };
 
@@ -153,6 +168,7 @@ export const ShopProfile = () => {
         shop_name: formData.shop_name,
         owner_name: formData.owner_name,
         mobile: formData.mobile,
+        email: formData.email,
         address: formData.address,
         city: formData.city,
         state: formData.state,
@@ -160,11 +176,17 @@ export const ShopProfile = () => {
       });
 
       if (res.data?.success) {
-        addToast('Shop details updated successfully!', 'success');
+        addToast({ title: 'Profile Updated', message: 'Shop details saved successfully!', type: 'success' });
+      } else {
+        addToast({ title: 'Update Notice', message: res.data?.message || 'Changes saved', type: 'info' });
       }
     } catch (err) {
       console.error('Failed to update shop details', err);
-      addToast(err.response?.data?.message || 'Update failed', 'error');
+      addToast({
+        title: 'Update Failed',
+        message: err.response?.data?.message || 'Failed to update shop profile. Please verify your connection.',
+        type: 'error',
+      });
     } finally {
       setSaving(false);
     }
@@ -173,11 +195,11 @@ export const ShopProfile = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (passwords.newPassword !== passwords.confirmPassword) {
-      addToast('New passwords do not match', 'warning');
+      addToast({ title: 'Password Mismatch', message: 'New password and confirm password do not match', type: 'warning' });
       return;
     }
     if (passwords.newPassword.length < 6) {
-      addToast('Password must be at least 6 characters', 'warning');
+      addToast({ title: 'Weak Password', message: 'Password must be at least 6 characters long', type: 'warning' });
       return;
     }
 
@@ -188,71 +210,97 @@ export const ShopProfile = () => {
         newPassword: passwords.newPassword,
       });
       if (res.data?.success) {
-        addToast('Password changed successfully!', 'success');
+        addToast({ title: 'Password Changed', message: 'Your login password was updated successfully!', type: 'success' });
         setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        addToast({ title: 'Update Notice', message: res.data?.message || 'Password update completed', type: 'info' });
       }
     } catch (err) {
       console.error('Failed to change password', err);
-      addToast(err.response?.data?.message || 'Password update failed', 'error');
+      addToast({
+        title: 'Password Update Failed',
+        message: err.response?.data?.message || 'Current password incorrect or request failed',
+        type: 'error',
+      });
     } finally {
       setChangingPassword(false);
     }
   };
 
-  const handleAddStaff = (e) => {
+  const handleSavePreferences = async (e) => {
     e.preventDefault();
-    if (!newStaffName || !newStaffMobile) return;
-    setStaff((prev) => [
-      ...prev,
-      { id: Date.now(), name: newStaffName, role: 'Store Clerk', mobile: newStaffMobile },
-    ]);
-    setNewStaffName('');
-    setNewStaffMobile('');
-    addToast('Staff member added', 'success');
+    setSavingPrefs(true);
+    try {
+      const res = await api.put('/shops/notification-preferences', prefData);
+      if (res.data?.success) {
+        addToast({ title: 'Preferences Saved', message: 'Notification preferences updated successfully!', type: 'success' });
+      } else {
+        addToast({ title: 'Notice', message: res.data?.message || 'Preferences recorded', type: 'info' });
+      }
+    } catch (e) {
+      console.error('Save preferences error', e);
+      addToast({
+        title: 'Error',
+        message: e.response?.data?.message || 'Failed to update notification channels',
+        type: 'error',
+      });
+    } finally {
+      setSavingPrefs(false);
+    }
   };
 
-  const handleRemoveStaff = (id) => {
-    setStaff((prev) => prev.filter((s) => s.id !== id));
-    addToast('Staff member removed', 'info');
-  };
+  if (loading) {
+    return <PageSkeleton />;
+  }
+
+  const safeCreditLimit = Number(formData.credit_limit || 250000);
+  const safeAvailable = Number(formData.available_credit || 250000);
+  const safeUsed = Number(formData.credit_used || 0);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24">
-      {/* Header Profile Identity */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-soft">
+      {/* ═══════════════════════════════════════════════════════════
+          HEADER: Profile Identity & Credit Standing
+          ═══════════════════════════════════════════════════════════ */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-bold text-xl shadow-soft flex-shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-500/20 flex-shrink-0">
               <Store className="w-7 h-7" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                  {formData.shop_name || 'Shree Krishna Traders'}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                  {formData.shop_name || 'Retailer Store'}
                 </h1>
-                <Badge variant="success">Approved Retailer</Badge>
+                <Badge variant="success">Approved B2B Retailer</Badge>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Owner: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.owner_name || user?.name}</span> • GSTIN: <span className="font-mono text-slate-700 dark:text-slate-300">{formData.gstin || '24AAACP1234M1Z2'}</span>
+                Owner: <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.owner_name || user?.name || 'Owner'}</span> • GSTIN: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{formData.gstin || '24AAACP1234M1Z2'}</span>
               </p>
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800/40 text-left sm:text-right">
-            <span className="text-[10px] text-brand-600 dark:text-brand-400 font-bold uppercase tracking-wider block">
+          <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-left sm:text-right">
+            <span className="text-[10px] text-blue-700 dark:text-blue-400 font-extrabold uppercase tracking-wider block">
               Trading Credit Limit
             </span>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">
-              ₹{formData.credit_limit.toLocaleString('en-IN')}
+            <span className="text-lg font-black text-slate-900 dark:text-white">
+              ₹{safeCreditLimit.toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-slate-500 block mt-0.5">
+              Available: <span className="font-bold text-emerald-600 dark:text-emerald-400">₹{safeAvailable.toLocaleString('en-IN')}</span>
             </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Form: Shop Information & Address */}
-        <Card title="Shop Information & Address" subtitle="Storefront details for delivery & billing">
-          <form onSubmit={handleUpdateProfile} className="space-y-3.5 text-xs">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* ═══════════════════════════════════════════════════════════
+            FORM 1: Storefront Information & Address
+            ═══════════════════════════════════════════════════════════ */}
+        <Card title="Shop Information & Address" subtitle="Storefront details for delivery dispatch & billing">
+          <form onSubmit={handleUpdateProfile} className="space-y-4 text-xs">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
                 Shop / Store Name
@@ -262,7 +310,7 @@ export const ShopProfile = () => {
                 value={formData.shop_name}
                 onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
                 required
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -275,7 +323,7 @@ export const ShopProfile = () => {
                 value={formData.owner_name}
                 onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
                 required
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -289,20 +337,20 @@ export const ShopProfile = () => {
                   value={formData.mobile}
                   onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   required
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                  GSTIN (Read Only)
+                  GSTIN (Verified)
                 </label>
                 <input
                   type="text"
                   value={formData.gstin}
                   readOnly
                   disabled
-                  className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-slate-500 font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 font-mono cursor-not-allowed"
                 />
               </div>
             </div>
@@ -316,7 +364,7 @@ export const ShopProfile = () => {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Shop No., Market / Street..."
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -329,7 +377,7 @@ export const ShopProfile = () => {
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -341,7 +389,7 @@ export const ShopProfile = () => {
                   type="text"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -352,18 +400,20 @@ export const ShopProfile = () => {
               size="sm"
               icon={Save}
               disabled={saving}
-              className="w-full font-bold shadow-soft"
+              className="w-full font-bold shadow-sm"
             >
               {saving ? 'Saving...' : 'Save Profile Changes'}
             </Button>
           </form>
         </Card>
 
-        {/* Change Password & Staff Section */}
+        {/* ═══════════════════════════════════════════════════════════
+            FORM 2: Security & Password + Notification Channels
+            ═══════════════════════════════════════════════════════════ */}
         <div className="space-y-6">
-          {/* Change Password Form */}
-          <Card title="Security & Password" subtitle="Update your portal login credentials">
-            <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
+          {/* Security & Password Form */}
+          <Card title="Security & Password" subtitle="Update your wholesale portal login credentials">
+            <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
                   Current Password
@@ -374,7 +424,7 @@ export const ShopProfile = () => {
                   onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
                   required
                   placeholder="••••••••"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -388,7 +438,7 @@ export const ShopProfile = () => {
                   onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
                   required
                   placeholder="At least 6 characters"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -402,7 +452,7 @@ export const ShopProfile = () => {
                   onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
                   required
                   placeholder="Repeat new password"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -419,52 +469,7 @@ export const ShopProfile = () => {
             </form>
           </Card>
 
-          {/* Shop Staff Contacts */}
-          <Card title="Authorized Shop Staff" subtitle="Store staff authorized to accept deliveries">
-            <div className="space-y-3">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {staff.map((s) => (
-                  <div key={s.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
-                      <p className="text-[11px] text-slate-400 font-mono">
-                        {s.role} • {s.mobile}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveStaff(s.id)}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <form onSubmit={handleAddStaff} className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                <input
-                  type="text"
-                  value={newStaffName}
-                  onChange={(e) => setNewStaffName(e.target.value)}
-                  placeholder="Staff Name"
-                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-                />
-                <input
-                  type="text"
-                  value={newStaffMobile}
-                  onChange={(e) => setNewStaffMobile(e.target.value)}
-                  placeholder="Mobile"
-                  className="w-28 px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
-                />
-                <Button type="submit" variant="secondary" size="sm" icon={Plus}>
-                  Add
-                </Button>
-              </form>
-            </div>
-          </Card>
-
-          {/* Notification Preferences & Channels */}
+          {/* Notification Channels & Alert Preferences */}
           <Card
             title="Notification Channels & Alerts"
             subtitle="Configure WhatsApp, SMS, and in-app updates"
@@ -473,15 +478,15 @@ export const ShopProfile = () => {
               {/* Channel Toggles */}
               <div className="space-y-2.5">
                 <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block text-[10px]">
-                  Available Channels
+                  Available Delivery Channels
                 </span>
 
-                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">In-App Notifications</p>
-                      <p className="text-[10px] text-slate-400">Order, payment, and dispatch alerts in portal</p>
+                      <p className="text-[10px] text-slate-400">Order dispatch alerts and stock updates</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
@@ -489,8 +494,8 @@ export const ShopProfile = () => {
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
                     <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">WhatsApp Business Updates</p>
@@ -499,25 +504,25 @@ export const ShopProfile = () => {
                   </div>
                   <input
                     type="checkbox"
-                    checked={prefData.channel_whatsapp}
+                    checked={!!prefData.channel_whatsapp}
                     onChange={(e) => setPrefData({ ...prefData, channel_whatsapp: e.target.checked })}
-                    className="w-4 h-4 text-brand-600 rounded border-slate-300 dark:border-slate-700 focus:ring-brand-500 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
                     <Smartphone className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">SMS Gateway Alerts</p>
-                      <p className="text-[10px] text-slate-400">Critical delivery milestones and payment reminders</p>
+                      <p className="text-[10px] text-slate-400">Critical delivery dispatch and billing receipts</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
-                    checked={prefData.channel_sms}
+                    checked={!!prefData.channel_sms}
                     onChange={(e) => setPrefData({ ...prefData, channel_sms: e.target.checked })}
-                    className="w-4 h-4 text-brand-600 rounded border-slate-300 dark:border-slate-700 focus:ring-brand-500 cursor-pointer"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
               </div>
@@ -528,33 +533,33 @@ export const ShopProfile = () => {
                   Event Preferences
                 </span>
 
-                <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
-                  <span className="text-slate-700 dark:text-slate-300">Order & Delivery Status Changes</span>
+                <label className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                  <span className="text-slate-700 dark:text-slate-300">Order & Delivery Dispatch Changes</span>
                   <input
                     type="checkbox"
-                    checked={prefData.order_updates}
+                    checked={!!prefData.order_updates}
                     onChange={(e) => setPrefData({ ...prefData, order_updates: e.target.checked })}
-                    className="w-4 h-4 text-brand-600 rounded border-slate-300"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300"
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
-                  <span className="text-slate-700 dark:text-slate-300">Udhaar Balance & Payment Reminders</span>
+                <label className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                  <span className="text-slate-700 dark:text-slate-300">Credit Ledger & Payment Reminders</span>
                   <input
                     type="checkbox"
-                    checked={prefData.payment_reminders}
+                    checked={!!prefData.payment_reminders}
                     onChange={(e) => setPrefData({ ...prefData, payment_reminders: e.target.checked })}
-                    className="w-4 h-4 text-brand-600 rounded border-slate-300"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300"
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
-                  <span className="text-slate-700 dark:text-slate-300">Promotions & Wholesale Broadcasts</span>
+                <label className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                  <span className="text-slate-700 dark:text-slate-300">Promotions & Wholesale Deals</span>
                   <input
                     type="checkbox"
-                    checked={prefData.promotional_offers}
+                    checked={!!prefData.promotional_offers}
                     onChange={(e) => setPrefData({ ...prefData, promotional_offers: e.target.checked })}
-                    className="w-4 h-4 text-brand-600 rounded border-slate-300"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300"
                   />
                 </label>
               </div>
@@ -565,7 +570,7 @@ export const ShopProfile = () => {
                 size="sm"
                 icon={Save}
                 disabled={savingPrefs}
-                className="w-full font-bold shadow-soft"
+                className="w-full font-bold shadow-sm"
               >
                 {savingPrefs ? 'Saving Preferences...' : 'Save Notification Preferences'}
               </Button>
@@ -578,4 +583,3 @@ export const ShopProfile = () => {
 };
 
 export default ShopProfile;
-

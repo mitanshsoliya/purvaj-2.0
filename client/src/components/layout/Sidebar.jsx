@@ -202,7 +202,6 @@ export const Sidebar = ({
         { label: 'Quick Reorder', to: '/shop/reorder', icon: Repeat },
         { label: 'Invoices & Bills', to: '/shop/bills', icon: FileText },
         { label: 'Payment History', to: '/shop/payments', icon: DollarSign },
-        { label: 'Outstanding Ledger', to: '/shop/outstanding', icon: Scale },
         { label: 'Notifications', to: '/shop/notifications', icon: BellRing },
         { label: 'Exclusive Offers', to: '/shop/offers', icon: Gift },
         { label: 'Shop Profile', to: '/shop/profile', icon: User },

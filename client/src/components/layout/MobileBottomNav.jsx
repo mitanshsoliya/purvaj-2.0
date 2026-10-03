@@ -36,7 +36,6 @@ export const MobileBottomNav = ({ cartCount = 0 }) => {
     { label: 'Quick Reorder', to: '/shop/reorder', icon: Repeat, desc: 'Order from past invoices' },
     { label: 'Invoices & Bills', to: '/shop/bills', icon: FileText, desc: 'Download tax invoices' },
     { label: 'Payments', to: '/shop/payments', icon: DollarSign, desc: 'History and bank slips' },
-    { label: 'Outstanding Ledger', to: '/shop/outstanding', icon: Scale, desc: 'Udhaar balance and statement' },
     { label: 'Exclusive Offers', to: '/shop/offers', icon: Gift, desc: 'Wholesale tiered discounts' },
     { label: 'Shop Profile', to: '/shop/profile', icon: User, desc: 'GST, address, and credit limit' },
     { label: 'Help & Support', to: '/shop/help', icon: HelpCircle, desc: 'Contact warehouse dispatch' },
