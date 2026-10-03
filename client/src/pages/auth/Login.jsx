@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ShieldCheck, Store, Lock, Mail, ArrowRight, Warehouse } from 'lucide-react';
+import { ShieldCheck, Store, Lock, Mail, ArrowRight, Warehouse, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BrandLogo from '../../components/layout/BrandLogo';
 import ThemeToggle from '../../components/layout/ThemeToggle';
@@ -17,6 +17,14 @@ export const Login = () => {
   const [password, setPassword] = useState('Purvaj@2026');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('expired') === '1') {
+      setSessionExpiredNotice(true);
+    }
+  }, [location.search]);
 
   const handleTabChange = (role) => {
     setActiveTab(role);
@@ -110,6 +118,13 @@ export const Login = () => {
               <span>Shop / Retailer</span>
             </button>
           </div>
+
+          {sessionExpiredNotice && !error && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>Your session expired. Please sign in to continue.</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-600 dark:text-rose-400">

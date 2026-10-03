@@ -15,17 +15,17 @@ if (!JWT_SECRET) {
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 /**
- * Generate short-lived access token (15 min)
+ * Generate access token (24h for active B2B wholesale platform usage)
  */
 export const generateAccessToken = (payload) => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '24h' });
 };
 
 /**
- * Generate long-lived refresh token (7 days)
+ * Generate long-lived refresh token (30 days)
  */
 export const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' });
 };
 
 /**

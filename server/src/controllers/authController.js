@@ -217,9 +217,13 @@ export const refreshAccessToken = async (req, res, next) => {
 
     const user = userResult.rows[0];
     const newAccessToken = generateAccessToken({ userId: user.id, role: user.role });
+    const newRefreshToken = generateRefreshToken({ userId: user.id, role: user.role });
 
     return sendSuccess(res, {
-      data: { accessToken: newAccessToken },
+      data: { 
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      },
       message: 'Token refreshed',
     });
   } catch (err) {

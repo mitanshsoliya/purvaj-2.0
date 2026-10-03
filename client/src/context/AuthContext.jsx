@@ -50,6 +50,26 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Listen for background token refresh and auth logout events from api interceptor
+  useEffect(() => {
+    const handleTokenRefreshed = (e) => {
+      if (e.detail?.token) {
+        setToken(e.detail.token);
+      }
+    };
+    const handleAuthLogout = () => {
+      setUser(null);
+      setToken(null);
+    };
+
+    window.addEventListener('purvaj_token_refreshed', handleTokenRefreshed);
+    window.addEventListener('purvaj_auth_logout', handleAuthLogout);
+    return () => {
+      window.removeEventListener('purvaj_token_refreshed', handleTokenRefreshed);
+      window.removeEventListener('purvaj_auth_logout', handleAuthLogout);
+    };
+  }, []);
+
   // Attempt to sync current user profile from DB on mount
   useEffect(() => {
     const syncCurrentUser = async () => {
