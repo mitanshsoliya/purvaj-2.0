@@ -31,12 +31,12 @@ export const Card = ({
         >
           <div>
             {title && (
-              <h3 className="font-semibold text-slate-900 dark:text-white text-base">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base tracking-tight">
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
                 {subtitle}
               </p>
             )}

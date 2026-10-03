@@ -22,7 +22,9 @@ import {
   Download,
   Sparkles,
   BoxesIcon,
-  IndianRupee
+  IndianRupee,
+  Bell,
+  Minus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -52,6 +54,7 @@ export const ShopDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [frequentProducts, setFrequentProducts] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [cardQuantities, setCardQuantities] = useState({});
 
   const { socket } = useSocket();
 
@@ -202,65 +205,29 @@ export const ShopDashboard = () => {
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 1: Offer Banner (matching reference - yellow/blue gradient)
           ═══════════════════════════════════════════════════════════════ */}
-      {offers.length > 0 ? (
-        <div className="relative overflow-hidden bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 rounded-2xl p-4 sm:p-5 shadow-lg">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA4KSIvPjwvc3ZnPg==')] opacity-50" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm flex-shrink-0">
-                <Sparkles className="w-6 h-6 text-yellow-300" />
-              </div>
-              <div>
-                <p className="text-yellow-200 text-xs font-bold uppercase tracking-wider">नया ऑफर!</p>
-                <p className="text-white text-sm sm:text-base font-bold mt-0.5">
-                  {offers[0].title || 'Diwali Bulk Sale starts now!'} 
-                  {offers[0].discount_type === 'percentage' 
-                    ? ` Up to ${parseFloat(offers[0].discount_value)}% off on bulk orders.`
-                    : ` ₹${parseFloat(offers[0].discount_value)} OFF!`}
-                </p>
-              </div>
+      {/* ═══════════════════════════════════════════════════════════════
+          SECTION 1: Offer Banner (Matching Reference Image - Golden Yellow)
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-amber-100 via-amber-50 to-yellow-100 dark:from-amber-950/60 dark:to-yellow-950/40 border-2 border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center flex-shrink-0 shadow-sm font-bold">
+              <Bell className="w-5 h-5 fill-slate-900" />
             </div>
-            <Link to="/shop/offers" className="flex-shrink-0">
-              <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold text-xs rounded-lg shadow-md transition-all hover:shadow-lg active:scale-95 uppercase tracking-wide">
-                [CLAIM NOW]
-              </button>
-            </Link>
-          </div>
-        </div>
-      ) : (
-        /* Default welcome banner if no offers */
-        <div className="relative overflow-hidden bg-gradient-to-br from-navy-950 via-navy-900 to-brand-950 text-white rounded-2xl p-5 sm:p-6 shadow-soft-lg border border-navy-800">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 flex items-center gap-1.5">
-                  <Store className="w-3.5 h-3.5" />
-                  Verified Retailer
-                </span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                {user?.shopName || user?.shop?.shop_name || 'Wholesale Partner'}
-              </h1>
-              <p className="text-xs text-slate-300 mt-1">
-                Same-Day Central Warehouse Dispatch Available
+              <p className="text-amber-900 dark:text-amber-300 text-xs font-extrabold uppercase tracking-wider">नया ऑफर!</p>
+              <p className="text-slate-900 dark:text-white text-xs sm:text-sm font-bold mt-0.5">
+                Wholesale: &lsquo;Diwali Bulk Sale starts now! Up to 25% off on bulk orders.&rsquo;
               </p>
             </div>
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              <Link to="/shop/quick-order">
-                <Button variant="primary" size="md" icon={Zap} className="bg-brand-600 hover:bg-brand-500 shadow-soft">
-                  Quick Order
-                </Button>
-              </Link>
-              <Link to="/shop/cart">
-                <Button variant="secondary" size="md" icon={ShoppingCart} className="bg-slate-800/80 hover:bg-slate-700 text-white border-slate-700">
-                  Cart ({cartCount})
-                </Button>
-              </Link>
-            </div>
           </div>
+          <Link to="/shop/offers" className="flex-shrink-0">
+            <button className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-lg shadow-sm transition-all hover:shadow active:scale-95 uppercase tracking-wider">
+              [CLAIM NOW]
+            </button>
+          </Link>
         </div>
-      )}
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 2: Product Grid (matching reference - product cards with ADD BOX TO CART)
@@ -323,20 +290,34 @@ export const ShopDashboard = () => {
                   <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight mb-1">
                     {p.name}
                   </h3>
-                  <p className="text-[10px] text-slate-400 font-medium">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                     Box of {moq > 1 ? moq : 10}
                   </p>
 
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1.5 mt-2">
-                    <span className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
+                  {/* Price & Quantity Stepper */}
+                  <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
                       ₹{applicablePrice.toFixed(0)}
                     </span>
-                    {hasDiscount && (
-                      <span className="text-[11px] text-slate-400 line-through">
-                        ₹{mrpPrice.toFixed(0)}
+                    <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setCardQuantities(prev => ({ ...prev, [p.id]: Math.max(1, (prev[p.id] || 1) - 1) }))}
+                        className="px-2 py-0.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs"
+                      >
+                        -
+                      </button>
+                      <span className="px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-white min-w-[20px] text-center">
+                        {cardQuantities[p.id] || 1}
                       </span>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setCardQuantities(prev => ({ ...prev, [p.id]: (prev[p.id] || 1) + 1 }))}
+                        className="px-2 py-0.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
 
                   {/* Add to Cart Button */}
@@ -344,9 +325,10 @@ export const ShopDashboard = () => {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      addItem(p, moq);
+                      const qty = (cardQuantities[p.id] || 1) * moq;
+                      addItem(p, qty);
                     }}
-                    className="mt-3 w-full py-2 px-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 uppercase tracking-wide"
+                    className="mt-3 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-lg shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 uppercase tracking-wide"
                     aria-label={`Add ${p.name} to cart`}
                   >
                     <ShoppingCart className="w-3.5 h-3.5" />

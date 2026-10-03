@@ -216,13 +216,13 @@ export const Sidebar = ({
   const sidebarContent = (
     <aside
       className={`
-        h-full bg-navy-900 text-slate-300 flex flex-col border-r border-navy-800
-        transition-all duration-300 select-none
+        h-full bg-gradient-to-b from-blue-700 via-blue-800 to-blue-900 text-blue-100 flex flex-col border-r border-blue-700/60
+        shadow-lg transition-all duration-300 select-none
         ${collapsed ? 'w-20' : 'w-64'}
       `}
     >
       {/* Brand Header */}
-      <div className="h-16 px-4 flex items-center justify-between border-b border-navy-800/80 flex-shrink-0">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-blue-600/40 flex-shrink-0 bg-blue-800/40">
         <BrandLogo
           collapsed={collapsed}
           to={role === 'admin' ? '/admin' : '/shop'}
@@ -233,7 +233,7 @@ export const Sidebar = ({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-navy-800 transition-colors"
+              className="hidden lg:flex p-1.5 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -243,7 +243,7 @@ export const Sidebar = ({
             <button
               type="button"
               onClick={onCloseMobile}
-              className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-navy-800 transition-colors"
+              className="lg:hidden p-2 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Close navigation drawer"
             >
               <X className="w-5 h-5" />
@@ -257,7 +257,7 @@ export const Sidebar = ({
         {menuGroups.map((group, groupIdx) => (
           <div key={groupIdx} className="space-y-1">
             {!collapsed && group.title && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400/90 mb-1.5">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-blue-200/90 mb-1.5">
                 {group.title}
               </p>
             )}
@@ -281,30 +281,30 @@ export const Sidebar = ({
                         transition-all duration-150 group
                         ${
                           hasActiveChild
-                            ? 'text-white bg-navy-800/70'
-                            : 'text-slate-300 hover:text-white hover:bg-navy-800/50'
+                            ? 'text-white bg-white/15 shadow-sm'
+                            : 'text-blue-100 hover:text-white hover:bg-white/10'
                         }
                       `}
                     >
                       <div className="flex items-center gap-2.5">
                         <ParentIcon
                           className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                            hasActiveChild ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-200'
+                            hasActiveChild ? 'text-white' : 'text-blue-200 group-hover:text-white'
                           }`}
                         />
                         {!collapsed && <span>{item.label}</span>}
                       </div>
                       {!collapsed && (
                         <ChevronDown
-                          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                            isOpen ? 'transform rotate-180 text-brand-400' : ''
+                          className={`w-3.5 h-3.5 text-blue-200 transition-transform duration-200 ${
+                            isOpen ? 'transform rotate-180 text-white' : ''
                           }`}
                         />
                       )}
                     </button>
 
                     {!collapsed && isOpen && (
-                      <div className="pl-6 pr-1 py-1 space-y-1 border-l border-navy-800 ml-4">
+                      <div className="pl-6 pr-1 py-1 space-y-1 border-l border-blue-500/30 ml-4">
                         {item.children.map((child) => {
                           const ChildIcon = child.icon;
                           return (
@@ -317,12 +317,12 @@ export const Sidebar = ({
                                 transition-colors
                                 ${
                                   isActive
-                                    ? 'bg-brand-600 text-white font-semibold shadow-soft-sm'
-                                    : 'text-slate-400 hover:text-slate-200 hover:bg-navy-800/40'
+                                    ? 'bg-white text-blue-700 font-bold shadow-sm'
+                                    : 'text-blue-100 hover:text-white hover:bg-white/10'
                                 }
                               `}
                             >
-                              <ChildIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-80" />
+                              <ChildIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-90" />
                               <span>{child.label}</span>
                             </NavLink>
                           );
@@ -346,8 +346,8 @@ export const Sidebar = ({
                     transition-all duration-150 group
                     ${
                       isActive
-                        ? 'bg-brand-600 text-white shadow-soft-sm'
-                        : 'text-slate-300 hover:text-white hover:bg-navy-800/60'
+                        ? 'bg-white text-blue-700 font-bold shadow-md'
+                        : 'text-blue-100 hover:text-white hover:bg-white/10'
                     }
                   `}
                 >
@@ -362,12 +362,12 @@ export const Sidebar = ({
 
       {/* Warehouse Status Footer */}
       {!collapsed && (
-        <div className="p-3 border-t border-navy-800/80 bg-navy-950/60 flex items-center justify-between text-[11px] text-slate-400">
+        <div className="p-3 border-t border-blue-600/40 bg-blue-950/40 flex items-center justify-between text-[11px] text-blue-200">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-medium text-slate-300">Central Hub Online</span>
+            <span className="font-medium text-white">Central Hub Online</span>
           </div>
-          <span className="text-[10px] text-slate-400 font-mono">v2.0.0</span>
+          <span className="text-[10px] text-blue-300 font-mono">v2.0.0</span>
         </div>
       )}
     </aside>

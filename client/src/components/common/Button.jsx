@@ -32,6 +32,9 @@ export const Button = ({
     ghost: 'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-soft-sm',
     success: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft-sm',
+    emerald: 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold shadow-soft hover:shadow-soft-md tracking-wide',
+    orange: 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold shadow-md hover:shadow-lg active:scale-95 tracking-wide',
+    gold: 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-extrabold shadow-md hover:shadow-lg active:scale-95 tracking-wide',
     // Gradient CTA — matching reference image's red/pink action buttons
     gradient: 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-md hover:shadow-lg font-bold tracking-wide uppercase',
     // Blue gradient variant

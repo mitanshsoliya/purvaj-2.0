@@ -7,8 +7,13 @@
 @layer base {
   :root {
     --color-primary: 37 99 235;
-    --sidebar-navy: 15 23 42;
-    --sidebar-navy-darker: 11 17 32;
+    --sidebar-navy: 29 78 216;
+    --sidebar-navy-darker: 30 58 138;
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   html {
@@ -19,12 +24,20 @@
   body {
     overflow-x: hidden;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   /* Global Accessible Keyboard Focus Outline */
   *:focus-visible {
     outline: 2px solid #2563eb !important;
     outline-offset: 2px !important;
+  }
+
+  /* Sharpen all headings */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.015em;
   }
 }
 
