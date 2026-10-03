@@ -25,7 +25,7 @@ export const Select = forwardRef(({
       {label && (
         <label
           htmlFor={selectId}
-          className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-1.5"
+          className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5"
         >
           {label} {required && <span className="text-rose-500">*</span>}
         </label>
@@ -42,19 +42,19 @@ export const Select = forwardRef(({
           aria-invalid={!!error}
           className={`
             w-full rounded-lg text-sm bg-white dark:bg-slate-900 
-            text-slate-900 dark:text-slate-100 border transition-colors duration-150 focus-ring font-medium
-            pl-3.5 pr-10 py-2.5 appearance-none cursor-pointer
+            text-slate-900 dark:text-slate-100 border transition-colors duration-150 focus-ring
+            pl-3.5 pr-10 py-2 appearance-none cursor-pointer
             ${error
               ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
               : 'border-slate-300 dark:border-slate-700 focus:border-brand-500'
             }
-            ${disabled ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed' : ''}
+            ${disabled ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' : ''}
             ${className}
           `}
           {...props}
         >
           {placeholder && (
-            <option value="" disabled className="text-slate-500">
+            <option value="" disabled className="text-slate-400">
               {placeholder}
             </option>
           )}
@@ -62,20 +62,20 @@ export const Select = forwardRef(({
             const val = typeof opt === 'object' ? opt.value : opt;
             const lbl = typeof opt === 'object' ? opt.label : opt;
             return (
-              <option key={val} value={val} className="text-slate-900 dark:text-white">
+              <option key={val} value={val}>
                 {lbl}
               </option>
             );
           })}
         </select>
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
           <ChevronDown className="w-4 h-4" />
         </div>
       </div>
       {error ? (
-        <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-semibold">{error}</p>
+        <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>
       ) : helperText ? (
-        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 font-medium">{helperText}</p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{helperText}</p>
       ) : null}
     </div>
   );

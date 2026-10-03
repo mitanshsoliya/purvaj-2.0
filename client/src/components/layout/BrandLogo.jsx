@@ -50,7 +50,7 @@ export const BrandLogo = ({
           {showSubtitle && (
             <span
               className={`text-[10px] tracking-wider uppercase font-semibold mt-1 ${
-                variant === 'dark' ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'
+                variant === 'dark' ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               B2B Wholesale

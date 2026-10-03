@@ -70,7 +70,7 @@ export const KPICard = ({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 truncate">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 truncate">
             {title}
           </p>
           {isLoading ? (
@@ -82,22 +82,22 @@ export const KPICard = ({
           )}
         </div>
         {Icon && (
-          <div className={`p-2.5 rounded-xl ${palette.iconBg} ${palette.iconText} flex-shrink-0 shadow-sm`}>
+          <div className={`p-2.5 rounded-xl ${palette.iconBg} ${palette.iconText} flex-shrink-0`}>
             <Icon className="w-5 h-5" />
           </div>
         )}
       </div>
 
       {(subtitle || trend || badge) && (
-        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-medium">
-          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+        <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-medium">
             {trend && (
               <span
                 className={`inline-flex items-center font-bold ${
                   trendDirection === 'up'
-                    ? 'text-emerald-700 dark:text-emerald-400'
+                    ? 'text-emerald-600 dark:text-emerald-400'
                     : trendDirection === 'down'
-                    ? 'text-rose-700 dark:text-rose-400'
+                    ? 'text-rose-600 dark:text-rose-400'
                     : palette.trendText
                 }`}
               >
@@ -107,10 +107,10 @@ export const KPICard = ({
                 {trend}
               </span>
             )}
-            {subtitle && <span className="text-slate-600 dark:text-slate-400 font-medium">{subtitle}</span>}
+            {subtitle && <span className="text-slate-600 dark:text-slate-300">{subtitle}</span>}
           </div>
           {badge && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700">
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
               {badge}
             </span>
           )}

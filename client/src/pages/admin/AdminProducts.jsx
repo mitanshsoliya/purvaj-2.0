@@ -582,8 +582,8 @@ export const AdminProducts = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm text-slate-700 dark:text-slate-200">
-              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700 text-[11px]">
+            <table className="w-full text-left text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-3.5 px-4">Product Details</th>
                   <th className="py-3.5 px-4">Category & Brand</th>
@@ -603,7 +603,7 @@ export const AdminProducts = () => {
                   return (
                     <tr
                       key={p.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
@@ -623,10 +623,10 @@ export const AdminProducts = () => {
                             )}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-white leading-tight">
+                            <div className="font-semibold text-slate-900 dark:text-white leading-tight">
                               {p.name}
                             </div>
-                            <div className="text-[11px] font-mono text-slate-600 dark:text-slate-400 flex items-center gap-2 mt-0.5 font-medium">
+                            <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2 mt-0.5">
                               <span>SKU: {p.sku}</span>
                               {p.hsn_code && <span>• HSN: {p.hsn_code}</span>}
                             </div>
@@ -635,24 +635,24 @@ export const AdminProducts = () => {
                       </td>
 
                       <td className="py-3 px-4">
-                        <div className="text-slate-900 dark:text-slate-100 font-semibold">
+                        <div className="text-slate-800 dark:text-slate-200 font-medium">
                           {p.category_name || 'Uncategorized'}
                         </div>
-                        <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">{p.brand_name || 'No Brand'}</div>
+                        <div className="text-[11px] text-slate-400">{p.brand_name || 'No Brand'}</div>
                       </td>
 
                       <td className="py-3 px-4 text-right">
-                        <div className="font-extrabold text-blue-600 dark:text-blue-400 text-sm">
+                        <div className="font-bold text-brand-600 dark:text-brand-400 text-sm">
                           ₹{parseFloat(p.selling_price).toFixed(2)}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">per {p.unit}</div>
+                        <div className="text-[11px] text-slate-400">per {p.unit}</div>
                       </td>
 
                       <td className="py-3 px-4 text-right">
-                        <div className="text-slate-500 line-through text-xs font-medium">
+                        <div className="text-slate-500 line-through text-xs">
                           ₹{parseFloat(p.mrp).toFixed(2)}
                         </div>
-                        <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                        <div className="text-[10px] text-emerald-600 font-semibold">
                           {p.mrp > p.selling_price
                             ? `${Math.round(((p.mrp - p.selling_price) / p.mrp) * 100)}% Margin`
                             : 'Standard'}
@@ -660,13 +660,13 @@ export const AdminProducts = () => {
                       </td>
 
                       <td className="py-3 px-4 text-center">
-                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {p.tax_rate}%
                         </span>
                       </td>
 
                       <td className="py-3 px-4 text-center">
-                        <div className="inline-flex items-center gap-1.5 font-bold">
+                        <div className="inline-flex items-center gap-1.5 font-semibold">
                           <span
                             className={`w-2 h-2 rounded-full ${
                               isOut ? 'bg-rose-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'
@@ -675,21 +675,21 @@ export const AdminProducts = () => {
                           <span
                             className={
                               isOut
-                                ? 'text-rose-700 dark:text-rose-400'
+                                ? 'text-rose-600'
                                 : isLow
-                                ? 'text-amber-700 dark:text-amber-400'
+                                ? 'text-amber-600'
                                 : 'text-slate-900 dark:text-slate-100'
                             }
                           >
                             {p.available_stock} {p.unit}s
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                        <div className="text-[10px] text-slate-400">
                           Min: {p.minimum_stock} | Res: {p.reserved_stock || 0}
                         </div>
                       </td>
 
-                      <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                      <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
                         {p.minimum_order_quantity} {p.unit}s
                       </td>
 

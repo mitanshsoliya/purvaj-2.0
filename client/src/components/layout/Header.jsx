@@ -223,14 +223,14 @@ export const Header = ({
                 {user?.name ? user.name.slice(0, 2) : 'PJ'}
               </div>
               <div className="hidden md:flex flex-col text-left leading-none">
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 max-w-[110px] truncate">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[110px] truncate">
                   {user?.shopName || user?.name || 'Purvaj User'}
                 </span>
-                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 capitalize mt-0.5">
+                <span className="text-[10px] font-medium text-slate-400 capitalize mt-0.5">
                   {user?.role === 'admin' ? 'Administrator' : 'Retail Partner'}
                 </span>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:block" />
             </button>
 
             {showProfileMenu && (
@@ -244,11 +244,11 @@ export const Header = ({
                     <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
                       {user?.shopName || user?.name}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5 font-medium">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                       {user?.email}
                     </p>
                     <div className="flex items-center gap-1.5 mt-2">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-800 border border-brand-200 dark:bg-brand-950/60 dark:text-brand-300">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
                         {user?.role === 'admin' ? (
                           <>
                             <ShieldCheck className="w-3 h-3" />

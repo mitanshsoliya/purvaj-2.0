@@ -1,12 +1,12 @@
 import React from 'react';
 
 const variantStyles = {
-  success: 'bg-emerald-100 text-emerald-900 font-bold border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
-  brand: 'bg-brand-100 text-brand-900 font-bold border-brand-300 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800',
-  info: 'bg-sky-100 text-sky-900 font-bold border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800',
-  warning: 'bg-amber-100 text-amber-900 font-bold border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
-  danger: 'bg-rose-100 text-rose-900 font-bold border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800',
-  neutral: 'bg-slate-100 text-slate-800 font-bold border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
+  success: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 font-bold',
+  brand: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800 font-bold',
+  info: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800 font-bold',
+  warning: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 font-bold',
+  danger: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 font-bold',
+  neutral: 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-bold',
 };
 
 const dotColors = {

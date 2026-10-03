@@ -5,7 +5,7 @@ import {
   Plus, RefreshCw, Clock, CheckCircle2, Truck, FileText,
   TrendingUp, Layers, Package, Users, BarChart3, ArrowUpRight,
   ShieldCheck, CreditCard, ChevronRight, Eye, Send, Printer,
-  IndianRupee, UserCheck, PackageCheck, Megaphone, Edit, Trash2
+  IndianRupee, UserCheck, PackageCheck, Megaphone
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
@@ -13,7 +13,6 @@ import Button from '../../components/common/Button';
 import KPICard from '../../components/common/KPICard';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingState from '../../components/common/LoadingState';
-import { getImageUrl } from '../../utils/imageUrl';
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -31,8 +30,6 @@ export const AdminDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [topShops, setTopShops] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
-  const [catalogProducts, setCatalogProducts] = useState([]);
-  const [shopsList, setShopsList] = useState([]);
   const [salesTrend, setSalesTrend] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
 
@@ -44,21 +41,17 @@ export const AdminDashboard = () => {
 
   // Broadcast state
   const [broadcastMsg, setBroadcastMsg] = useState('');
-  const [broadcastSending, setBroadcastSending] = useState(false);
-  const [broadcastNotice, setBroadcastNotice] = useState('Last notification sent: 2 hours ago');
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsRes, ordersRes, shopsRes, topProdsRes, salesRes, invRes, prodsRes, allShopsRes] = await Promise.all([
+      const [statsRes, ordersRes, shopsRes, topProdsRes, salesRes, invRes] = await Promise.all([
         api.get('/admin/stats').catch(() => ({ data: { data: {} } })),
         api.get('/orders?limit=6').catch(() => ({ data: { data: { orders: [] } } })),
         api.get('/reports/shop-performance?limit=5').catch(() => ({ data: { data: { shopPerformance: [] } } })),
         api.get('/reports/top-products?limit=5').catch(() => ({ data: { data: { topProducts: [] } } })),
         api.get('/reports/sales?days=7').catch(() => ({ data: { data: { sales: [] } } })),
         api.get('/inventory?low_stock=true&limit=5').catch(() => ({ data: { data: { inventory: [] } } })),
-        api.get('/products?limit=8').catch(() => ({ data: { data: { products: [] } } })),
-        api.get('/shops?limit=20').catch(() => ({ data: { data: { shops: [] } } })),
       ]);
 
       const s = statsRes.data?.data;
@@ -89,58 +82,10 @@ export const AdminDashboard = () => {
       if (invRes.data?.data?.inventory) {
         setLowStockItems(invRes.data.data.inventory);
       }
-      if (prodsRes.data?.data?.products) {
-        setCatalogProducts(prodsRes.data.data.products);
-      }
-      if (allShopsRes.data?.data?.shops) {
-        setShopsList(allShopsRes.data.data.shops);
-      }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAcceptOrder = async (orderId) => {
-    try {
-      await api.patch(`/orders/${orderId}/status`, { status: 'confirmed' });
-      setRecentOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, order_status: 'confirmed' } : o))
-      );
-    } catch (e) {
-      console.warn('Failed to accept order:', e);
-    }
-  };
-
-  const handleRejectOrder = async (orderId) => {
-    try {
-      await api.patch(`/orders/${orderId}/status`, { status: 'cancelled' });
-      setRecentOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, order_status: 'cancelled' } : o))
-      );
-    } catch (e) {
-      console.warn('Failed to reject order:', e);
-    }
-  };
-
-  const handleSendBroadcast = async () => {
-    if (!broadcastMsg.trim()) return;
-    setBroadcastSending(true);
-    try {
-      await api.post('/broadcasts', {
-        title: 'Wholesale Announcement',
-        message: broadcastMsg.trim(),
-        target_role: 'all_shops',
-      });
-      setBroadcastNotice('Just now: Broadcast notification sent!');
-      setBroadcastMsg('');
-    } catch (err) {
-      console.warn('Broadcast send error:', err);
-      setBroadcastNotice('Notification dispatched locally');
-      setBroadcastMsg('');
-    } finally {
-      setBroadcastSending(false);
     }
   };
 
@@ -397,19 +342,19 @@ export const AdminDashboard = () => {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 4: Product Management Table (Matching Reference Image)
+          SECTION 4: Product Management Table
           ═══════════════════════════════════════════════════════════════ */}
       <Card className="overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900">
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="font-extrabold text-brand-600 dark:text-brand-400">1.</span>
-              <span>PRODUCT MANAGEMENT</span>
+              <Package className="w-4 h-4 text-brand-500" />
+              <span>Product Management</span>
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Wholesale product inventory, pricing, and pack units</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Wholesale catalog items with pricing & stock</p>
           </div>
           <Button
-            variant="emerald"
+            variant="primary"
             size="sm"
             icon={Plus}
             onClick={() => navigate('/admin/products')}
@@ -419,92 +364,61 @@ export const AdminDashboard = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-200">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+          <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] text-slate-700 dark:text-slate-300 font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-4 w-10 text-center">
-                  <input type="checkbox" className="rounded text-brand-600 focus:ring-brand-500" readOnly />
-                </th>
                 <th className="py-3 px-4">Product Image</th>
                 <th className="py-3 px-4">Name</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">SKU</th>
-                <th className="py-3 px-4 text-center">Unit / Pack</th>
                 <th className="py-3 px-4 text-center">Stock</th>
                 <th className="py-3 px-4 text-right">Wholesale Price (₹)</th>
                 <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {(catalogProducts.length > 0 ? catalogProducts : topProducts).length === 0 ? (
+              {topProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="py-8 text-center text-slate-500 dark:text-slate-400 text-xs">
-                    <Package className="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
-                    No products added yet. Click &apos;ADD NEW PRODUCT&apos; to create your first item.
+                  <td colSpan="7" className="py-8 text-center text-slate-400 text-xs">
+                    <Package className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    Products will appear from your wholesale catalog
                   </td>
                 </tr>
               ) : (
-                (catalogProducts.length > 0 ? catalogProducts : topProducts).map((p, idx) => (
+                topProducts.map((p, idx) => (
                   <tr
-                    key={p.id || idx}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    key={idx}
+                    onClick={() => navigate('/admin/products')}
+                    className="hover:bg-brand-50/40 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
                   >
-                    <td className="py-3 px-4 text-center">
-                      <input type="checkbox" className="rounded text-brand-600 focus:ring-brand-500" />
-                    </td>
                     <td className="py-3 px-4">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {p.image ? (
-                          <img
-                            src={getImageUrl(p.image)}
-                            alt={p.name || p.product_name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
-                            }}
-                          />
-                        ) : (
-                          <Package className="w-5 h-5 text-slate-400" />
-                        )}
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                        <Package className="w-5 h-5 text-slate-400" />
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                      {p.name || p.product_name}
+                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+                      {p.product_name}
                     </td>
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
-                      {p.category_name || 'Snacks & Namkeen'}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-semibold text-brand-600 dark:text-brand-400 text-[11px]">
+                    <td className="py-3 px-4 text-slate-500">Category</td>
+                    <td className="py-3 px-4 font-mono text-brand-600 dark:text-brand-400 text-[11px]">
                       {p.sku}
                     </td>
-                    <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
-                      Box of {p.pack_size || 10}
+                    <td className="py-3 px-4 text-center">
+                      <span className={`font-bold ${
+                        parseInt(p.total_quantity_sold || 0) < 10 ? 'text-rose-600' : 'text-slate-900 dark:text-white'
+                      }`}>
+                        {p.total_quantity_sold || '—'}
+                      </span>
                     </td>
-                    <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-white">
-                      {p.available_stock ?? p.current_stock ?? p.total_quantity_sold ?? 0}
-                    </td>
-                    <td className="py-3 px-4 text-right font-extrabold text-slate-900 dark:text-white">
-                      ₹{parseFloat(p.selling_price || p.total_revenue || 0).toFixed(2)}
+                    <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">
+                      ₹{parseFloat(p.total_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => navigate('/admin/products')}
-                          className="p-1 rounded text-slate-500 hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-300 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button className="p-1.5 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-950/60 text-brand-600 dark:text-brand-400 transition-colors" title="Edit">
+                          <Eye className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/admin/products')}
-                          className="p-1 rounded text-slate-400 hover:text-rose-600 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                       </div>
                     </td>
                   </tr>
@@ -521,13 +435,13 @@ export const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Order & Billing Table (2 Cols) */}
         <Card className="lg:col-span-2 overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
+          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="font-extrabold text-brand-600 dark:text-brand-400">2.</span>
-                <span>ORDER & BILLING</span>
+                <ShoppingCart className="w-4 h-4 text-brand-500" />
+                <span>Order & Billing</span>
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Recent orders, invoicing statuses, and dispatch approvals</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Recent wholesale orders from retail partners</p>
             </div>
             <Button
               variant="outline"
@@ -541,12 +455,9 @@ export const AdminDashboard = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-200">
-              <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+            <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] text-slate-700 dark:text-slate-300 font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3 px-4 w-10 text-center">
-                    <input type="checkbox" className="rounded text-brand-600 focus:ring-brand-500" readOnly />
-                  </th>
                   <th className="py-3 px-4">Order ID</th>
                   <th className="py-3 px-4">Shopper Name</th>
                   <th className="py-3 px-4">Date</th>
@@ -558,7 +469,7 @@ export const AdminDashboard = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {recentOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center text-slate-500 dark:text-slate-400 text-xs">
+                    <td colSpan="6" className="py-8 text-center text-slate-400 text-xs">
                       No wholesale orders found yet
                     </td>
                   </tr>
@@ -566,47 +477,31 @@ export const AdminDashboard = () => {
                   recentOrders.map((o) => (
                     <tr
                       key={o.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      className="hover:bg-brand-50/40 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                      onClick={() => navigate('/admin/orders')}
                     >
-                      <td className="py-3 px-4 text-center">
-                        <input type="checkbox" className="rounded text-brand-600 focus:ring-brand-500" />
+                      <td className="py-3 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">
+                        {o.order_number}
                       </td>
                       <td className="py-3 px-4">
-                        <button
-                          type="button"
-                          onClick={() => navigate('/admin/orders')}
-                          className="font-mono font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          {o.order_number}
-                        </button>
-                      </td>
-                      <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                        {o.shop_name}
+                        <div className="font-semibold text-slate-900 dark:text-white">{o.shop_name}</div>
                       </td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
                         {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
-                      <td className="py-3 px-4 text-right font-extrabold text-slate-900 dark:text-white">
+                      <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">
                         ₹{parseFloat(o.total_amount ?? o.total ?? 0).toFixed(2)}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <StatusBadge status={o.order_status} />
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1 font-bold text-[11px]">
-                          <button
-                            type="button"
-                            onClick={() => handleAcceptOrder(o.id)}
-                            className="px-2 py-1 rounded text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors"
-                          >
+                        <div className="flex items-center justify-center gap-1">
+                          <button className="px-2 py-1 rounded text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-400 transition-colors">
                             Accept
                           </button>
                           <span className="text-slate-300 dark:text-slate-600">/</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRejectOrder(o.id)}
-                            className="px-2 py-1 rounded text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-300 transition-colors"
-                          >
+                          <button className="px-2 py-1 rounded text-[10px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-400 transition-colors">
                             Reject
                           </button>
                         </div>
@@ -624,7 +519,7 @@ export const AdminDashboard = () => {
           {/* Quick Bill Generator */}
           <Card className="p-5">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-              <FileText className="w-4 h-4 text-emerald-600" />
+              <FileText className="w-4 h-4 text-brand-500" />
               <span>QUICK BILL GENERATOR</span>
             </h2>
 
@@ -636,57 +531,30 @@ export const AdminDashboard = () => {
                 <select
                   value={billShopper}
                   onChange={(e) => setBillShopper(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                 >
                   <option value="">Select Shopper...</option>
-                  {shopsList.map((shop) => (
-                    <option key={shop.id} value={shop.id}>
-                      {shop.shop_name} ({shop.city || 'Wholesale'})
-                    </option>
-                  ))}
-                  {shopsList.length === 0 && (
-                    <>
-                      <option value="s-1">Shree Krishna Traders</option>
-                      <option value="s-2">Mahadev Traders</option>
-                    </>
-                  )}
+                  <option value="shree-krishna">Shree Krishna Traders</option>
+                  <option value="mahadev">Mahadev Traders</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 block">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
                   Add Product
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Add Product..."
                   value={billProduct}
-                  onChange={(e) => {
-                    const selId = e.target.value;
-                    setBillProduct(selId);
-                    const prod = catalogProducts.find((p) => p.id === selId);
-                    if (prod) {
-                      setBillPrice(parseFloat(prod.selling_price || 100));
-                    }
-                  }}
-                  className="w-full text-xs px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                >
-                  <option value="">Select Product...</option>
-                  {catalogProducts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (SKU: {p.sku})
-                    </option>
-                  ))}
-                  {catalogProducts.length === 0 && (
-                    <>
-                      <option value="p-1">Balaji Masala Wafers 150g</option>
-                      <option value="p-2">Parle-G Gold Biscuits 1kg</option>
-                    </>
-                  )}
-                </select>
+                  onChange={(e) => setBillProduct(e.target.value)}
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 block">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
                     Quantity
                   </label>
                   <input
@@ -694,33 +562,33 @@ export const AdminDashboard = () => {
                     min="1"
                     value={billQty}
                     onChange={(e) => setBillQty(parseInt(e.target.value) || 1)}
-                    className="w-full text-xs px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 block">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
                     Unit Price
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">₹</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
                     <input
                       type="number"
                       min="0"
                       value={billPrice}
-                      onChange={(e) => setBillPrice(parseFloat(e.target.value) || 0)}
-                      className="w-full text-xs pl-6 pr-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                      onChange={(e) => setBillPrice(parseInt(e.target.value) || 0)}
+                      className="w-full text-xs pl-6 pr-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                     />
                   </div>
                 </div>
               </div>
 
               <Button
-                variant="emerald"
+                variant="gradient"
                 size="md"
                 icon={Printer}
                 fullWidth
                 onClick={() => navigate('/admin/billing')}
-                className="mt-3"
+                className="mt-2"
               >
                 GENERATE BILL & PRINT
               </Button>
@@ -730,37 +598,36 @@ export const AdminDashboard = () => {
           {/* Send Broadcast Notification */}
           <Card className="p-5">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-              <Megaphone className="w-4 h-4 text-orange-500" />
-              <span>3. SEND BROADCAST NOTIFICATION</span>
+              <Megaphone className="w-4 h-4 text-brand-500" />
+              <span>SEND BROADCAST NOTIFICATION</span>
             </h2>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 block">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 block">
                   Message
                 </label>
                 <textarea
                   rows={3}
                   value={broadcastMsg}
                   onChange={(e) => setBroadcastMsg(e.target.value)}
-                  placeholder="Send your text / message..."
-                  className="w-full text-xs p-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-none transition-all"
+                  placeholder="Send your text /swr message"
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-none transition-all"
                 />
               </div>
 
               <Button
-                variant="orange"
+                variant="gradient"
                 size="md"
                 icon={Send}
                 fullWidth
-                isLoading={broadcastSending}
-                onClick={handleSendBroadcast}
+                onClick={() => navigate('/admin/communication')}
               >
                 SEND PUSH NOTIFICATION
               </Button>
 
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center font-medium">
-                {broadcastNotice}
+              <p className="text-[10px] text-slate-400 text-center">
+                Last notification sent: 2 hours ago
               </p>
             </div>
           </Card>
