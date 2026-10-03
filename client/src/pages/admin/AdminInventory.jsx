@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
-import KPICard from '../../components/common/KPICard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -261,44 +260,52 @@ export const AdminInventory = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Total SKUs"
-          value={totalSKUs.toString()}
-          subtitle="Tracked warehouse catalog"
-          icon={Layers}
-          iconColor="indigo"
-          isLoading={loading}
-        />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total SKUs</span>
+            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+              <Layers className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{totalSKUs}</div>
+          <div className="text-xs text-slate-500 mt-1">Tracked warehouse catalog</div>
+        </Card>
 
-        <KPICard
-          title="Low Stock Alerts"
-          value={lowStockCount.toString()}
-          subtitle="Below minimum threshold"
-          icon={AlertTriangle}
-          iconColor="amber"
-          badge={lowStockCount > 0 ? `${lowStockCount} Action Req.` : undefined}
-          isLoading={loading}
-        />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Low Stock Alerts</span>
+            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{lowStockCount}</div>
+          <div className="text-xs text-slate-500 mt-1">Below minimum threshold</div>
+        </Card>
 
-        <KPICard
-          title="Out of Stock"
-          value={outOfStockCount.toString()}
-          subtitle="Zero available units"
-          icon={XCircle}
-          iconColor={outOfStockCount > 0 ? 'rose' : 'brand'}
-          badge={outOfStockCount > 0 ? `${outOfStockCount} Critical` : undefined}
-          isLoading={loading}
-        />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">Out of Stock</span>
+            <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
+              <XCircle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">{outOfStockCount}</div>
+          <div className="text-xs text-slate-500 mt-1">Zero available units</div>
+        </Card>
 
-        <KPICard
-          title="Warehouse Valuation"
-          value={`₹${totalValuation.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-          subtitle="At wholesale selling price"
-          icon={DollarSign}
-          iconColor="emerald"
-          isLoading={loading}
-        />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Warehouse Valuation</span>
+            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            ₹{totalValuation.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          </div>
+          <div className="text-xs text-slate-500 mt-1">At wholesale selling price</div>
+        </Card>
       </div>
 
       {/* Tabs */}

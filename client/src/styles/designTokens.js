@@ -60,10 +60,10 @@ export const tokens = {
         dot: 'bg-sky-500',
       },
       secondary: {
-        bg: 'bg-indigo-50 dark:bg-indigo-950/40',
-        text: 'text-indigo-700 dark:text-indigo-300',
-        border: 'border-indigo-200 dark:border-indigo-800',
-        dot: 'bg-indigo-500',
+        bg: 'bg-purple-50 dark:bg-purple-950/40',
+        text: 'text-purple-700 dark:text-purple-300',
+        border: 'border-purple-200 dark:border-purple-800',
+        dot: 'bg-purple-500',
       },
       neutral: {
         bg: 'bg-slate-100 dark:bg-slate-800',
@@ -75,9 +75,8 @@ export const tokens = {
   },
   shadows: {
     card: 'shadow-soft border border-slate-200/80 dark:border-slate-800',
-    cardHover: 'hover:shadow-soft-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200',
+    cardHover: 'hover:shadow-soft-md transition-shadow duration-200',
     dropdown: 'shadow-soft-lg border border-slate-200 dark:border-slate-800',
-    modal: 'shadow-soft-xl border border-slate-200 dark:border-slate-800',
   },
   radii: {
     card: 'rounded-xl',
@@ -85,10 +84,4 @@ export const tokens = {
     input: 'rounded-lg',
     badge: 'rounded-full',
   },
-  typography: {
-    pageTitle: 'text-2xl font-bold tracking-tight text-slate-900 dark:text-white',
-    sectionTitle: 'text-lg font-semibold tracking-tight text-slate-900 dark:text-white',
-    subtitle: 'text-sm text-slate-500 dark:text-slate-400',
-    tableHeader: 'text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider',
-  }
 };

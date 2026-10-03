@@ -216,7 +216,7 @@ export const Sidebar = ({
   const sidebarContent = (
     <aside
       className={`
-        h-full bg-navy-900 text-slate-300 flex flex-col border-r border-navy-800/80
+        h-full bg-navy-900 text-slate-300 flex flex-col border-r border-navy-800
         transition-all duration-300 select-none
         ${collapsed ? 'w-20' : 'w-64'}
       `}
@@ -233,7 +233,7 @@ export const Sidebar = ({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-navy-800/80 transition-colors"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-navy-800 transition-colors"
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -243,7 +243,7 @@ export const Sidebar = ({
             <button
               type="button"
               onClick={onCloseMobile}
-              className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-navy-800/80 transition-colors"
+              className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-navy-800 transition-colors"
               aria-label="Close navigation drawer"
             >
               <X className="w-5 h-5" />
@@ -253,7 +253,7 @@ export const Sidebar = ({
       </div>
 
       {/* Nav List */}
-      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-5 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-6 scrollbar-thin">
         {menuGroups.map((group, groupIdx) => (
           <div key={groupIdx} className="space-y-1">
             {!collapsed && group.title && (
@@ -281,7 +281,7 @@ export const Sidebar = ({
                         transition-all duration-150 group
                         ${
                           hasActiveChild
-                            ? 'text-white bg-navy-800/80 shadow-soft-xs'
+                            ? 'text-white bg-navy-800/70'
                             : 'text-slate-300 hover:text-white hover:bg-navy-800/50'
                         }
                       `}
@@ -304,7 +304,7 @@ export const Sidebar = ({
                     </button>
 
                     {!collapsed && isOpen && (
-                      <div className="pl-6 pr-1 py-1 space-y-0.5 border-l border-navy-800/80 ml-4 animate-fade-in">
+                      <div className="pl-6 pr-1 py-1 space-y-1 border-l border-navy-800 ml-4">
                         {item.children.map((child) => {
                           const ChildIcon = child.icon;
                           return (
@@ -314,11 +314,11 @@ export const Sidebar = ({
                               onClick={onCloseMobile}
                               className={({ isActive }) => `
                                 flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium
-                                transition-all duration-150
+                                transition-colors
                                 ${
                                   isActive
                                     ? 'bg-brand-600 text-white font-semibold shadow-soft-sm'
-                                    : 'text-slate-400 hover:text-slate-200 hover:bg-navy-800/50'
+                                    : 'text-slate-400 hover:text-slate-200 hover:bg-navy-800/40'
                                 }
                               `}
                             >
@@ -346,7 +346,7 @@ export const Sidebar = ({
                     transition-all duration-150 group
                     ${
                       isActive
-                        ? 'bg-brand-600 text-white shadow-soft-sm font-semibold'
+                        ? 'bg-brand-600 text-white shadow-soft-sm'
                         : 'text-slate-300 hover:text-white hover:bg-navy-800/60'
                     }
                   `}
@@ -388,7 +388,7 @@ export const Sidebar = ({
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] z-10 shadow-soft-lg animate-fade-in">
+          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] z-10 shadow-soft-lg">
             {sidebarContent}
           </div>
         </div>

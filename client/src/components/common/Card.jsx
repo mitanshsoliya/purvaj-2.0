@@ -10,18 +10,14 @@ export const Card = ({
   bodyClassName = '',
   headerClassName = '',
   noPadding = false,
-  interactive = false,
-  onClick,
 }) => {
   return (
     <div
-      onClick={onClick}
       className={`
         bg-white dark:bg-slate-900 
-        border border-slate-200/80 dark:border-slate-800 
+        border border-slate-200/90 dark:border-slate-800 
         rounded-xl shadow-soft transition-all duration-200
         overflow-hidden
-        ${interactive || onClick ? 'cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-soft-md' : ''}
         ${className}
       `}
     >
@@ -35,7 +31,7 @@ export const Card = ({
         >
           <div>
             {title && (
-              <h3 className="font-semibold text-slate-900 dark:text-white text-base tracking-tight">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-base">
                 {title}
               </h3>
             )}

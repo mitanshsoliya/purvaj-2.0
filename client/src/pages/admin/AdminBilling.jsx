@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
-import KPICard from '../../components/common/KPICard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -307,43 +306,44 @@ export const AdminBilling = () => {
       </div>
 
       {/* Top 4 KPI Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard
-          title="Total Invoices"
-          value={invoices.length.toString()}
-          subtitle="Authoritative records"
-          icon={FileText}
-          iconColor="brand"
-          isLoading={loading}
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-4 border-l-4 border-l-brand-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Total Invoices</span>
+            <FileText className="w-4 h-4 text-brand-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{invoices.length}</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Authoritative records</div>
+        </Card>
 
-        <KPICard
-          title="Total Billed Turnover"
-          value={`₹${totalBilled.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-          subtitle="Including CGST/SGST/IGST"
-          icon={CreditCard}
-          iconColor="emerald"
-          isLoading={loading}
-        />
+        <Card className="p-4 border-l-4 border-l-emerald-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Total Billed Turnover</span>
+            <CreditCard className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">
+            ₹{totalBilled.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          </div>
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">Including CGST/SGST/IGST</div>
+        </Card>
 
-        <KPICard
-          title="Fully Paid"
-          value={paidCount.toString()}
-          subtitle="Invoices settled in full"
-          icon={CheckCircle2}
-          iconColor="indigo"
-          isLoading={loading}
-        />
+        <Card className="p-4 border-l-4 border-l-sky-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Fully Paid</span>
+            <CheckCircle2 className="w-4 h-4 text-sky-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{paidCount}</div>
+          <div className="text-[11px] text-sky-600 dark:text-sky-400 mt-0.5">Invoices settled in full</div>
+        </Card>
 
-        <KPICard
-          title="Pending Collection"
-          value={pendingCount.toString()}
-          subtitle="Outstanding on wholesale credit"
-          icon={Clock}
-          iconColor="amber"
-          badge={pendingCount > 0 ? `${pendingCount} Open` : undefined}
-          isLoading={loading}
-        />
+        <Card className="p-4 border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Pending Collection</span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{pendingCount}</div>
+          <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">Outstanding on wholesale credit</div>
+        </Card>
       </div>
 
       {/* Filter Toolbar */}

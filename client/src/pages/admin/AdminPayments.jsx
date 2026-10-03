@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
-import KPICard from '../../components/common/KPICard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -274,43 +273,56 @@ export const AdminPayments = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Total Collections"
-          value={`₹${totalCollections.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-          subtitle={`Today: ₹${todayCollections.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-          icon={DollarSign}
-          iconColor="emerald"
-          isLoading={loading}
-        />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Collections</span>
+            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            ₹{totalCollections.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          </div>
+          <div className="text-xs text-slate-500 mt-1">
+            Today: <strong>₹{todayCollections.toLocaleString('en-IN')}</strong>
+          </div>
+        </Card>
 
-        <KPICard
-          title="Total Udhaar / Credit"
-          value={`₹${totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
-          subtitle="Pending collections across network"
-          icon={Scale}
-          iconColor="purple"
-          isLoading={loading}
-        />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Total Udhaar / Credit</span>
+            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+              <Scale className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
+            ₹{totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+          </div>
+          <div className="text-xs text-slate-500 mt-1">Pending collections across network</div>
+        </Card>
 
-        <KPICard
-          title="Retailers with Dues"
-          value={shopsWithDebt.length.toString()}
-          subtitle="Active debtor accounts"
-          icon={Store}
-          iconColor="amber"
-          badge={shopsWithDebt.length > 0 ? `${shopsWithDebt.length} Active` : undefined}
-          isLoading={loading}
-        />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Retailers with Dues</span>
+            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
+              <Store className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{shopsWithDebt.length}</div>
+          <div className="text-xs text-slate-500 mt-1">Active debtor accounts</div>
+        </Card>
 
-        <KPICard
-          title="Gateway Transactions"
-          value={transactions.length.toString()}
-          subtitle="Audited gateway authorizations"
-          icon={CreditCard}
-          iconColor="indigo"
-          isLoading={loading}
-        />
+        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gateway Transactions</span>
+            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+              <CreditCard className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{transactions.length}</div>
+          <div className="text-xs text-slate-500 mt-1">Audited gateway authorizations</div>
+        </Card>
       </div>
 
       {/* Tabs */}

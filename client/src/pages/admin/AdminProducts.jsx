@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
-import KPICard from '../../components/common/KPICard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -475,43 +474,42 @@ export const AdminProducts = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard
-          title="Total Products"
-          value={totalCount.toString()}
-          subtitle="Master Catalog Active"
-          icon={Package}
-          iconColor="brand"
-          isLoading={loading}
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-4 border-l-4 border-l-brand-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Total Items</span>
+            <Package className="w-4 h-4 text-brand-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{totalCount}</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Master Catalog Active</div>
+        </Card>
 
-        <KPICard
-          title="Healthy Stock"
-          value={inStockCount.toString()}
-          subtitle="Ready for wholesale dispatch"
-          icon={CheckCircle2}
-          iconColor="emerald"
-          isLoading={loading}
-        />
+        <Card className="p-4 border-l-4 border-l-emerald-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Healthy Stock</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{inStockCount}</div>
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">Ready for wholesale dispatch</div>
+        </Card>
 
-        <KPICard
-          title="Low Stock Alert"
-          value={lowStockCount.toString()}
-          subtitle="Reorder required soon"
-          icon={AlertTriangle}
-          iconColor="amber"
-          badge={lowStockCount > 0 ? `${lowStockCount} Critical` : undefined}
-          isLoading={loading}
-        />
+        <Card className="p-4 border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Low Stock Alert</span>
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{lowStockCount}</div>
+          <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">Reorder required soon</div>
+        </Card>
 
-        <KPICard
-          title="Categories"
-          value={categories.length.toString()}
-          subtitle="Active Classifications"
-          icon={Layers}
-          iconColor="purple"
-          isLoading={loading}
-        />
+        <Card className="p-4 border-l-4 border-l-purple-500">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Categories</span>
+            <Layers className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1.5">{categories.length}</div>
+          <div className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5">Product Classifications</div>
+        </Card>
       </div>
 
       {/* Filter Toolbar */}
