@@ -14,6 +14,7 @@ import Modal from '../../components/common/Modal';
 import StatusBadge from '../../components/common/StatusBadge';
 import EmptyState from '../../components/common/EmptyState';
 import LoadingState from '../../components/common/LoadingState';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const GST_SLABS = [
   { value: '0', label: '0% (Exempt)' },
@@ -274,18 +275,24 @@ export const AdminProducts = () => {
     setIsModalOpen(true);
   };
 
-  // Handle Image File Upload
+  // Handle Image File Upload (supports all downloaded image formats)
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file (JPG, PNG, WebP).');
+    // Check by file extension OR MIME type to allow .jfif, .avif, .webp, camera photos, etc.
+    const isImageExtension = /\.(jpe?g|png|webp|gif|svg|jfif|avif|bmp)$/i.test(file.name);
+    const isImageMime = file.type ? file.type.startsWith('image/') : false;
+
+    if (!isImageExtension && !isImageMime) {
+      alert('Please select an image file (JPG, PNG, WebP, JFIF, AVIF, etc.).');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image file size must be less than 5MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image file size must be less than 10MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -310,10 +317,11 @@ export const AdminProducts = () => {
         setFormData((prev) => ({ ...prev, image: res.data.data.url }));
       }
     } catch (err) {
-      console.warn('Backend file upload failed, using local image data:', err);
+      console.warn('Backend file upload failed, using local preview image:', err);
       // The Base64 preview is already set, so it remains usable!
     } finally {
       setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -601,7 +609,15 @@ export const AdminProducts = () => {
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-soft-xs">
                             {p.image ? (
-                              <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                              <img
+                                src={getImageUrl(p.image)}
+                                alt={p.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                                }}
+                              />
                             ) : (
                               <Package className="w-6 h-6 text-slate-400" />
                             )}
@@ -733,14 +749,21 @@ export const AdminProducts = () => {
                 {formData.image ? (
                   <>
                     <img
-                      src={formData.image}
+                      src={getImageUrl(formData.image)}
                       alt="Preview"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                      }}
                     />
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, image: '' })}
-                      className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        setFormData({ ...formData, image: '' });
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity shadow-sm"
                       title="Remove image"
                     >
                       <X className="w-3 h-3" />
@@ -760,7 +783,7 @@ export const AdminProducts = () => {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept="image/png, image/jpeg, image/webp"
+                  accept="image/*,.jfif,.avif"
                   className="hidden"
                 />
 
@@ -776,7 +799,7 @@ export const AdminProducts = () => {
                   >
                     Upload from Device
                   </Button>
-                  <span className="text-[11px] text-slate-400">JPG, PNG, WebP (Max 5MB)</span>
+                  <span className="text-[11px] text-slate-400">All Images (JPG, PNG, WebP, JFIF, Max 10MB)</span>
                 </div>
 
                 {/* Instant Presets Bar */}

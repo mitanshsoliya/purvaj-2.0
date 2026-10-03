@@ -22,6 +22,7 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import { getImageUrl } from '../../utils/imageUrl';
 
 export const ShopProducts = () => {
   const { addItem, updateQuantity, items: cartItems, cartCount, grandTotal } = useCart();
@@ -282,10 +283,14 @@ export const ShopProducts = () => {
                   >
                     {p.image ? (
                       <img
-                        src={p.image}
+                        src={getImageUrl(p.image)}
                         alt={p.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                        }}
                       />
                     ) : (
                       <Package className="w-10 h-10 text-slate-300 dark:text-slate-600" />
@@ -465,9 +470,13 @@ export const ShopProducts = () => {
               <div className="w-full sm:w-48 h-48 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
                 {selectedProduct.image ? (
                   <img
-                    src={selectedProduct.image}
+                    src={getImageUrl(selectedProduct.image)}
                     alt={selectedProduct.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                    }}
                   />
                 ) : (
                   <Package className="w-16 h-16 text-slate-400" />

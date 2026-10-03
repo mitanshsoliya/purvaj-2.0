@@ -17,6 +17,7 @@ import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
+import { getImageUrl } from '../../utils/imageUrl';
 
 export const ShopQuickOrder = () => {
   const { addItem, cartCount } = useCart();
@@ -186,7 +187,15 @@ export const ShopQuickOrder = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {p.image ? (
-                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                          <img
+                            src={getImageUrl(p.image)}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                            }}
+                          />
                         ) : (
                           <Package className="w-5 h-5 text-slate-400" />
                         )}
@@ -258,7 +267,15 @@ export const ShopQuickOrder = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {product.image ? (
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                          <img
+                            src={getImageUrl(product.image)}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                            }}
+                          />
                         ) : (
                           <Package className="w-5 h-5 text-slate-400" />
                         )}

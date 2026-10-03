@@ -231,12 +231,13 @@ const uploadLimiter = rateLimit({
 
 // Middleware
 app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: IS_DEV ? false : {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       connectSrc: ["'self'", ...ALLOWED_ORIGINS],
     },
@@ -254,8 +255,21 @@ if (!IS_DEV) {
   app.use(morgan('dev'));
 }
 
-// API Routes
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static uploaded files with cross-origin headers
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  },
+  express.static(path.join(__dirname, '../uploads'))
+);
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api', healthRoutes);
 app.use('/api/auth', authLimiter, authRoutes);

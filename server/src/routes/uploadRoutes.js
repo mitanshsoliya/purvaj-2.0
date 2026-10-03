@@ -17,34 +17,46 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer storage config
+// Multer storage config with robust extension handling
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname).toLowerCase();
+    let ext = path.extname(file.originalname).toLowerCase();
+    if (!ext || ext === '.') {
+      if (file.mimetype === 'image/png') ext = '.png';
+      else if (file.mimetype === 'image/webp') ext = '.webp';
+      else if (file.mimetype === 'image/gif') ext = '.gif';
+      else ext = '.jpg';
+    } else if (ext === '.jfif') {
+      ext = '.jpg';
+    }
     cb(null, `prod-${uniqueSuffix}${ext}`);
   },
 });
 
-// File filter for images only
+// File filter accepting all common downloaded and photographed image formats
 const fileFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png|webp|gif|svg/;
+  const allowed = /jpeg|jpg|png|webp|gif|svg|jfif|avif|bmp/;
   const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
-  const mimetype = file.mimetype;
+  const mimetype = (file.mimetype || '').toLowerCase();
 
-  if (allowed.test(ext) || mimetype.startsWith('image/')) {
+  if (
+    allowed.test(ext) ||
+    mimetype.startsWith('image/') ||
+    (mimetype === 'application/octet-stream' && allowed.test(ext))
+  ) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files (JPG, PNG, WebP, GIF) are allowed'), false);
+    cb(new Error('Only image files (JPG, PNG, WebP, GIF, JFIF, AVIF) are allowed'), false);
   }
 };
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max for high-res images
   fileFilter,
 });
 

@@ -23,6 +23,7 @@ import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import { getImageUrl } from '../../utils/imageUrl';
 import Badge from '../../components/common/Badge';
 
 export const ShopCart = () => {
@@ -304,7 +305,15 @@ export const ShopCart = () => {
                     <div className="flex items-start gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200 dark:border-slate-700">
                         {item.image ? (
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          <img
+                            src={getImageUrl(item.image)}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                            }}
+                          />
                         ) : (
                           <Package className="w-6 h-6 text-slate-400" />
                         )}

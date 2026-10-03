@@ -33,6 +33,7 @@ import Badge from '../../components/common/Badge';
 import { PageSkeleton } from '../../components/common/Skeleton';
 import OrderProgressTracker from '../../components/orders/OrderProgressTracker';
 import { useSocket } from '../../context/SocketContext';
+import { getImageUrl } from '../../utils/imageUrl';
 
 export const ShopDashboard = () => {
   const { user } = useAuth();
@@ -292,9 +293,13 @@ export const ShopDashboard = () => {
                 <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center overflow-hidden">
                   {p.image ? (
                     <img
-                      src={p.image}
+                      src={getImageUrl(p.image)}
                       alt={p.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80';
+                      }}
                     />
                   ) : (
                     <div className="text-center">
