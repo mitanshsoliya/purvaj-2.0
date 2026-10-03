@@ -1,11 +1,12 @@
 /**
- * PURVAJ 2.0 - Production Database Cleanup & Account Normalization
- * 1. Removes all test/fake orders, invoices, payments, deliveries, logs, and notifications
- * 2. Removes fake/test products (e.g. Test Product 1)
- * 3. Keeps EXACTLY 1 Admin account and 2 Shop accounts
- * 4. Resets shop credit balances to clean state
- * 5. Resets inventory reserved stocks
- * 6. Ensures passwords are set to 'Purvaj@2026'
+ * PURVAJ 2.0 - Total Data Wipe & Account Normalization
+ * Instruction:
+ * 1. Remove ALL products (0 products)
+ * 2. Remove ALL orders, order items, deliveries, invoices, payments, carts, returns (0 orders, 0 invoices)
+ * 3. Remove ALL staff, employees, managers, extra roles (0 staff, 0 employees, 0 managers)
+ * 4. Keep EXACTLY 1 Admin (role: 'admin') and 2 Shops (roles: 'shop_owner')
+ * 5. Reset shop credit usage to 0.00
+ * 6. Set passwords to 'Purvaj@2026'
  */
 
 import bcrypt from 'bcryptjs';
@@ -19,7 +20,8 @@ const SHOP_2_USER_ID = 'b0000001-0000-0000-0000-000000000004'; // Dinesh Joshi (
 
 const cleanup = async () => {
   console.log('\n========================================================');
-  console.log('  PURVAJ 2.0 - DATABASE CLEANUP & RESET TO PRODUCTION  ');
+  console.log('   PURVAJ 2.0 - TOTAL DATA WIPE (0 PRODUCTS, 0 ORDERS)   ');
+  console.log('   KEEPING EXACTLY 1 ADMIN & 2 SHOPS                     ');
   console.log('========================================================\n');
 
   const client = await pool.connect();
@@ -28,8 +30,7 @@ const cleanup = async () => {
     const existingTablesRes = await client.query(
       "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
     );
-    const existingTables = new Set(existingTablesRes.rows.map(r => r.table_name));
-    console.log('Detected existing tables:', Array.from(existingTables).join(', '));
+    const existingTables = new Set(existingTablesRes.rows.map((r) => r.table_name));
 
     const safeDelete = async (table) => {
       if (existingTables.has(table)) {
@@ -40,8 +41,8 @@ const cleanup = async () => {
 
     await client.query('BEGIN');
 
-    // 1. Delete all transactional fake data
-    console.log('1. Clearing fake orders, invoices, payments, and delivery history...');
+    // 1. Delete all transactional order & billing data
+    console.log('1. Clearing all orders, invoices, payments, returns, carts, deliveries...');
     await safeDelete('return_items');
     await safeDelete('returns');
     await safeDelete('invoice_items');
@@ -58,87 +59,94 @@ const cleanup = async () => {
     await safeDelete('shop_ledger');
     await safeDelete('stock_transactions');
     await safeDelete('notification_preferences');
+    await safeDelete('offer_products');
     await safeDelete('offer_shops');
+    await safeDelete('offers');
     await safeDelete('shop_group_members');
-    await safeDelete('shop_staff');
 
-    // 2. Clear communications, notifications, broadcasts
-    console.log('2. Clearing broadcast logs and notification messages...');
+    // 2. Delete ALL staff, employees, managers, employers
+    console.log('2. Removing all staff, employees, and managers...');
+    await safeDelete('staff');
+    await safeDelete('shop_staff');
     await safeDelete('broadcast_recipients');
     await safeDelete('broadcasts');
     await safeDelete('message_logs');
     await safeDelete('notifications');
     await safeDelete('audit_logs');
 
-    // 3. Remove fake/test products
-    console.log('3. Removing test products...');
-    const fakeProds = await client.query(
-      "SELECT id, name, sku FROM products WHERE sku = 'TST-001' OR name ILIKE '%test%'"
-    );
-    for (const p of fakeProds.rows) {
-      await client.query('DELETE FROM shop_product_prices WHERE product_id = $1', [p.id]);
-      await client.query('DELETE FROM inventory WHERE product_id = $1', [p.id]);
-      await client.query('DELETE FROM products WHERE id = $1', [p.id]);
-      console.log(`   Removed test product: ${p.name} (${p.sku})`);
+    // 3. Delete ALL products, inventory, shop prices
+    console.log('3. Removing ALL products and inventory...');
+    await safeDelete('shop_product_prices');
+    await safeDelete('inventory');
+    await safeDelete('products');
+
+    // 4. Clean up shops: keep EXACTLY 2 shops
+    console.log('4. Keeping EXACTLY 2 active shops (removing all others)...');
+    if (existingTables.has('shops')) {
+      const deletedShops = await client.query(
+        'DELETE FROM shops WHERE id NOT IN ($1, $2) RETURNING shop_name',
+        [SHOP_1_ID, SHOP_2_ID]
+      );
+      console.log(`   Removed ${deletedShops.rowCount} extra shops.`);
+
+      // Reset credit balance on both shops
+      await client.query(
+        "UPDATE shops SET credit_used = 0, credit_limit = 250000, status = 'active' WHERE id = $1",
+        [SHOP_1_ID]
+      );
+      await client.query(
+        "UPDATE shops SET credit_used = 0, credit_limit = 200000, status = 'active' WHERE id = $1",
+        [SHOP_2_ID]
+      );
     }
 
-    // 4. Clean up shop pricing and shops not in our target 2
-    console.log('4. Removing extra shops (keeping 2 active shops)...');
-    await client.query(
-      'DELETE FROM shop_product_prices WHERE shop_id NOT IN ($1, $2)',
-      [SHOP_1_ID, SHOP_2_ID]
-    );
-    const deletedShops = await client.query(
-      'DELETE FROM shops WHERE id NOT IN ($1, $2) RETURNING shop_name',
-      [SHOP_1_ID, SHOP_2_ID]
-    );
-    console.log(`   Removed ${deletedShops.rowCount} extra shops.`);
+    // 5. Clean up users: keep EXACTLY 1 Admin and 2 Shop Owners (NO super_admin, NO manager, NO employer)
+    console.log('5. Keeping EXACTLY 1 Admin + 2 Shop Owners (removing all others)...');
+    if (existingTables.has('users')) {
+      const deletedUsers = await client.query(
+        'DELETE FROM users WHERE id NOT IN ($1, $2, $3) RETURNING name, email',
+        [ADMIN_ID, SHOP_1_USER_ID, SHOP_2_USER_ID]
+      );
+      console.log(`   Removed ${deletedUsers.rowCount} extra users.`);
 
-    // 5. Clean up extra users (keeping 1 Admin and 2 Shop Owners)
-    console.log('5. Removing extra users (keeping 1 Admin + 2 Shop Owners)...');
-    const deletedUsers = await client.query(
-      'DELETE FROM users WHERE id NOT IN ($1, $2, $3) RETURNING name, email',
-      [ADMIN_ID, SHOP_1_USER_ID, SHOP_2_USER_ID]
-    );
-    console.log(`   Removed ${deletedUsers.rowCount} extra users.`);
+      // Ensure Admin role is 'admin' (not 'super_admin' or anything else)
+      await client.query(
+        "UPDATE users SET role = 'admin', is_active = true WHERE id = $1",
+        [ADMIN_ID]
+      );
+      // Ensure both shop owners are 'shop_owner'
+      await client.query(
+        "UPDATE users SET role = 'shop_owner', is_active = true WHERE id IN ($1, $2)",
+        [SHOP_1_USER_ID, SHOP_2_USER_ID]
+      );
 
-    // 6. Reset Inventory Reserved Stock to 0
-    console.log('6. Resetting inventory reserved stock to 0...');
-    await client.query('UPDATE inventory SET reserved_stock = 0');
-
-    // 7. Reset Shop Credit balances
-    console.log('7. Resetting shop credit limits and usage to pristine state...');
-    await client.query(
-      "UPDATE shops SET credit_used = 0, credit_limit = 250000, status = 'active' WHERE id = $1",
-      [SHOP_1_ID]
-    );
-    await client.query(
-      "UPDATE shops SET credit_used = 0, credit_limit = 200000, status = 'active' WHERE id = $1",
-      [SHOP_2_ID]
-    );
-
-    // 8. Update Passwords to 'Purvaj@2026'
-    console.log('8. Ensuring secure bcrypt hash for Purvaj@2026 password...');
-    const passwordHash = await bcrypt.hash('Purvaj@2026', 10);
-    await client.query('UPDATE users SET password_hash = $1', [passwordHash]);
+      // Ensure secure password hash for 'Purvaj@2026'
+      const passwordHash = await bcrypt.hash('Purvaj@2026', 10);
+      await client.query('UPDATE users SET password_hash = $1', [passwordHash]);
+    }
 
     await client.query('COMMIT');
-    console.log('\n✅ DATABASE CLEANUP COMPLETE! ALL FAKE DATA REMOVED.\n');
+    console.log('\n✅ DATABASE CLEANUP COMPLETE! ALL PRODUCTS & ORDERS REMOVED.\n');
 
-    // Verify remaining state
-    const remainingUsers = await client.query('SELECT id, name, email, role FROM users');
+    // Verification
+    const remainingUsers = await client.query('SELECT id, name, email, role FROM users ORDER BY role, name');
     console.log('=== REMAINING USERS (EXACTLY 1 ADMIN + 2 SHOPS) ===');
     console.table(remainingUsers.rows);
 
-    const remainingShops = await client.query('SELECT id, shop_name, owner_name, mobile, city, credit_limit, credit_used FROM shops');
+    const remainingShops = await client.query('SELECT id, shop_name, owner_name, mobile, city, credit_limit, credit_used, status FROM shops');
     console.log('=== REMAINING SHOPS (EXACTLY 2 SHOPS) ===');
     console.table(remainingShops.rows);
 
+    const remainingStaff = await client.query('SELECT COUNT(*) FROM staff');
     const remainingProducts = await client.query('SELECT COUNT(*) FROM products');
     const remainingOrders = await client.query('SELECT COUNT(*) FROM orders');
     const remainingInvoices = await client.query('SELECT COUNT(*) FROM invoices');
-    console.log('=== SUMMARY OF CLEAN DATABASE ===');
+
+    console.log('=== FINAL DATABASE VERIFICATION ===');
     console.log({
+      usersCount: remainingUsers.rows.length,
+      shopsCount: remainingShops.rows.length,
+      staffCount: remainingStaff.rows[0].count,
       productsCount: remainingProducts.rows[0].count,
       ordersCount: remainingOrders.rows[0].count,
       invoicesCount: remainingInvoices.rows[0].count,
