@@ -419,7 +419,7 @@ export const ShopDashboard = () => {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-white">
-                        ₹{parseFloat(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{parseFloat(order.total_amount ?? order.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${getStatusBadgeColor(order.order_status)}`}>
@@ -462,7 +462,7 @@ export const ShopDashboard = () => {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
-                      ₹{parseFloat(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{parseFloat(order.total_amount ?? order.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                     <span className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold flex items-center gap-0.5">
                       View Details <ArrowRight className="w-3 h-3" />

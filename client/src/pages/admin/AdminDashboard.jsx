@@ -490,7 +490,7 @@ export const AdminDashboard = () => {
                         {new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">
-                        ₹{parseFloat(o.total).toFixed(2)}
+                        ₹{parseFloat(o.total_amount ?? o.total ?? 0).toFixed(2)}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <StatusBadge status={o.order_status} />

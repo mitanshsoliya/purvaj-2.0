@@ -528,10 +528,10 @@ export const AdminOrders = () => {
 
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 dark:text-white">
-                          ₹{parseFloat(order.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          ₹{parseFloat(order.total_amount ?? order.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
-                        <div className="text-[11px] text-slate-400">
-                          Tax: ₹{parseFloat(order.tax_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        <div className="text-[11px] text-slate-400 font-medium">
+                          GST: ₹{parseFloat(order.tax_amount ?? order.tax ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                       </td>
 
@@ -661,26 +661,42 @@ export const AdminOrders = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                     {selectedOrder.items && selectedOrder.items.length > 0 ? (
-                      selectedOrder.items.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-3">
-                            <div className="font-semibold">{item.product_name}</div>
-                            <div className="text-[11px] text-slate-400">SKU: {item.sku || 'N/A'}</div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-medium">
-                            ₹{parseFloat(item.unit_price).toFixed(2)}
-                          </td>
-                          <td className="py-2.5 px-3 text-center font-bold">
-                            {item.quantity}
-                          </td>
-                          <td className="py-2.5 px-3 text-right text-slate-500">
-                            ₹{parseFloat(item.tax_amount || 0).toFixed(2)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
-                            ₹{parseFloat(item.total_amount || 0).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
+                      selectedOrder.items.map((item, idx) => {
+                        const unitPrice = parseFloat(item.unit_price || 0);
+                        const qty = parseInt(item.quantity || 1, 10);
+                        const itemSub = unitPrice * qty;
+                        const taxRate = parseFloat(item.tax_rate ?? item.tax_rate_snapshot ?? 0);
+                        const itemTax = parseFloat(item.tax_amount ?? item.tax ?? ((itemSub * taxRate) / 100));
+                        const itemTot = parseFloat(item.total_amount ?? item.total ?? (itemSub + itemTax));
+
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                            <td className="py-2.5 px-3">
+                              <div className="font-semibold text-slate-900 dark:text-white">
+                                {item.product_name || item.product_name_snapshot || 'Wholesale Item'}
+                              </div>
+                              <div className="text-[11px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium">
+                              ₹{unitPrice.toFixed(2)}
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-bold">
+                              {qty}
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-slate-500">
+                              <div>₹{itemTax.toFixed(2)}</div>
+                              {taxRate > 0 && (
+                                <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                  ({taxRate}% GST)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                              ₹{itemTot.toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td colSpan="5" className="py-4 text-center text-slate-400">
@@ -697,22 +713,26 @@ export const AdminOrders = () => {
                 <div className="w-full sm:w-64 space-y-1.5 text-xs">
                   <div className="flex justify-between text-slate-500">
                     <span>Items Subtotal:</span>
-                    <span>₹{parseFloat(selectedOrder.subtotal || 0).toFixed(2)}</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      ₹{parseFloat(selectedOrder.subtotal ?? (parseFloat(selectedOrder.total ?? selectedOrder.total_amount ?? 0) - parseFloat(selectedOrder.tax ?? selectedOrder.tax_amount ?? 0))).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-slate-500">
                     <span>GST (CGST + SGST):</span>
-                    <span>₹{parseFloat(selectedOrder.tax_amount || 0).toFixed(2)}</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      ₹{parseFloat(selectedOrder.tax_amount ?? selectedOrder.tax ?? 0).toFixed(2)}
+                    </span>
                   </div>
-                  {parseFloat(selectedOrder.discount_amount || 0) > 0 && (
+                  {parseFloat(selectedOrder.discount_amount ?? selectedOrder.discount ?? 0) > 0 && (
                     <div className="flex justify-between text-emerald-600 font-medium">
                       <span>Wholesale Discount:</span>
-                      <span>-₹{parseFloat(selectedOrder.discount_amount).toFixed(2)}</span>
+                      <span>-₹{parseFloat(selectedOrder.discount_amount ?? selectedOrder.discount).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="border-t border-slate-200 dark:border-slate-700 pt-1.5 flex justify-between text-sm font-bold text-slate-900 dark:text-white">
                     <span>Net Order Total:</span>
-                    <span className="text-indigo-600 dark:text-indigo-400">
-                      ₹{parseFloat(selectedOrder.total_amount || 0).toFixed(2)}
+                    <span className="text-brand-600 dark:text-brand-400 text-base">
+                      ₹{parseFloat(selectedOrder.total_amount ?? selectedOrder.total ?? 0).toFixed(2)}
                     </span>
                   </div>
                 </div>

@@ -527,7 +527,13 @@ export const getOrderDeliveryTimeline = async (req, res, next) => {
         order: {
           id: order.id,
           order_number: order.order_number,
+          subtotal: order.subtotal,
+          tax: order.tax,
+          tax_amount: order.tax,
+          discount: order.discount,
+          discount_amount: order.discount,
           total: order.total,
+          total_amount: order.total,
           payment_status: order.payment_status,
           order_status: order.order_status,
           delivery_status: order.delivery_status,

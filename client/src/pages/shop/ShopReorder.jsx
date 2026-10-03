@@ -251,7 +251,7 @@ export const ShopReorder = () => {
                   </div>
 
                   <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    ₹{parseFloat(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    ₹{parseFloat(order.total_amount ?? order.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
 
                   <p className="text-xs text-slate-500 dark:text-slate-400">

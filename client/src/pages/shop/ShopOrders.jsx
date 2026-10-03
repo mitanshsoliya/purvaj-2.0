@@ -354,7 +354,7 @@ export const ShopOrders = () => {
                 <div>
                   <span className="text-[11px] text-slate-400 block uppercase">Total Bill</span>
                   <span className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 block">
-                    ₹{parseFloat(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    ₹{parseFloat(order.total_amount ?? order.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
 
@@ -440,7 +440,7 @@ export const ShopOrders = () => {
                   <div key={item.id} className="p-3 flex items-center justify-between gap-3 text-xs">
                     <div className="min-w-0">
                       <p className="font-bold text-slate-900 dark:text-white truncate">
-                        {item.product_name || item.name}
+                        {item.product_name || item.product_name_snapshot || item.name || 'Wholesale Item'}
                       </p>
                       <p className="text-[11px] text-slate-400 font-mono">
                         SKU: {item.sku} • {item.quantity} units @ ₹{parseFloat(item.unit_price).toFixed(2)}
@@ -448,10 +448,10 @@ export const ShopOrders = () => {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-bold text-slate-900 dark:text-white">
-                        ₹{parseFloat(item.total_amount || item.unit_price * item.quantity).toFixed(2)}
+                        ₹{parseFloat(item.total_amount ?? item.total ?? (item.unit_price * item.quantity)).toFixed(2)}
                       </p>
-                      <span className="text-[10px] text-slate-400">
-                        +{item.tax_rate || 0}% GST
+                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                        +{parseFloat(item.tax_rate ?? item.tax_rate_snapshot ?? 0)}% GST
                       </span>
                     </div>
                   </div>
@@ -464,13 +464,13 @@ export const ShopOrders = () => {
               <div className="flex justify-between text-slate-500">
                 <span>Subtotal:</span>
                 <span className="font-semibold text-slate-900 dark:text-white">
-                  ₹{parseFloat(selectedOrder.subtotal || 0).toFixed(2)}
+                  ₹{parseFloat(selectedOrder.subtotal ?? (parseFloat(selectedOrder.total ?? selectedOrder.total_amount ?? 0) - parseFloat(selectedOrder.tax ?? selectedOrder.tax_amount ?? 0))).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between text-slate-500">
                 <span>Total GST:</span>
                 <span className="font-semibold text-slate-900 dark:text-white">
-                  ₹{parseFloat(selectedOrder.tax_amount || 0).toFixed(2)}
+                  ₹{parseFloat(selectedOrder.tax_amount ?? selectedOrder.tax ?? 0).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between text-emerald-600">
@@ -480,7 +480,7 @@ export const ShopOrders = () => {
               <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm font-bold text-slate-900 dark:text-white">
                 <span>Grand Total:</span>
                 <span className="text-brand-600 dark:text-brand-400">
-                  ₹{parseFloat(selectedOrder.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹{parseFloat(selectedOrder.total_amount ?? selectedOrder.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -495,7 +495,7 @@ export const ShopOrders = () => {
                   onClick={() => setPayingOrder(selectedOrder)}
                   className="w-full bg-emerald-600 hover:bg-emerald-500 font-bold shadow-soft"
                 >
-                  Pay Order Bill (₹{parseFloat(selectedOrder.total_amount).toLocaleString('en-IN')})
+                  Pay Order Bill (₹{parseFloat(selectedOrder.total_amount ?? selectedOrder.total ?? 0).toLocaleString('en-IN')})
                 </Button>
               )}
 

@@ -273,7 +273,16 @@ export const createOrder = async (req, res, next) => {
       data: {
         order: {
           ...order,
-          items: validatedItems,
+          total_amount: order.total,
+          tax_amount: order.tax,
+          discount_amount: order.discount,
+          items: validatedItems.map(vi => ({
+            ...vi,
+            product_name: vi.name,
+            product_name_snapshot: vi.name,
+            tax_amount: vi.tax,
+            total_amount: vi.total,
+          })),
         },
       },
       message: `Order ${order.order_number} placed successfully`,
@@ -353,10 +362,16 @@ export const listOrders = async (req, res, next) => {
     `;
 
     const result = await pool.query(query, params);
+    const formattedOrders = result.rows.map(o => ({
+      ...o,
+      total_amount: o.total,
+      tax_amount: o.tax,
+      discount_amount: o.discount,
+    }));
 
     return sendSuccess(res, {
       data: {
-        orders: result.rows,
+        orders: formattedOrders,
         pagination: {
           total,
           page: parseInt(page),
@@ -424,7 +439,20 @@ export const getOrderById = async (req, res, next) => {
       data: {
         order: {
           ...order,
-          items: itemsRes.rows,
+          total_amount: order.total,
+          tax_amount: order.tax,
+          discount_amount: order.discount,
+          items: itemsRes.rows.map(item => ({
+            ...item,
+            product_name: item.product_name_snapshot || item.product_name,
+            product_name_snapshot: item.product_name_snapshot || item.product_name,
+            tax: item.tax,
+            tax_amount: item.tax,
+            total: item.total,
+            total_amount: item.total,
+            tax_rate: item.tax_rate_snapshot || item.tax_rate,
+            tax_rate_snapshot: item.tax_rate_snapshot || item.tax_rate,
+          })),
           history: historyRes.rows,
         },
       },
@@ -606,7 +634,14 @@ export const updateOrderStatus = async (req, res, next) => {
       ipAddress: req.ip,
     });
 
-    return sendSuccess(res, { data: { order: updatedOrder }, message: `Order status updated to ${status}` });
+    const formattedUpdatedOrder = {
+      ...updatedOrder,
+      total_amount: updatedOrder.total,
+      tax_amount: updatedOrder.tax,
+      discount_amount: updatedOrder.discount,
+    };
+
+    return sendSuccess(res, { data: { order: formattedUpdatedOrder }, message: `Order status updated to ${status}` });
   } catch (err) {
     await client.query('ROLLBACK');
     next(err);

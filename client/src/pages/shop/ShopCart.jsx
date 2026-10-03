@@ -168,7 +168,7 @@ export const ShopCart = () => {
           <div className="flex justify-between items-center text-xs pb-3 border-b border-slate-100 dark:border-slate-800">
             <span className="text-slate-500">Total Invoice Amount:</span>
             <span className="text-base font-bold text-slate-900 dark:text-white">
-              ₹{parseFloat(completedOrder.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              ₹{parseFloat(completedOrder.total_amount ?? completedOrder.total ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </span>
           </div>
 
