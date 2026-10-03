@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
+import KPICard from '../../components/common/KPICard';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -371,52 +372,43 @@ export const AdminShops = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Retailers</span>
-            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-              <Store className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{totalShopsCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Registered shops on network</div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          title="Total Retailers"
+          value={totalShopsCount.toString()}
+          subtitle="Registered shops on network"
+          icon={Store}
+          iconColor="indigo"
+          isLoading={loading}
+        />
 
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Active & Verified</span>
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeShopsCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Ordering enabled</div>
-        </Card>
+        <KPICard
+          title="Active & Verified"
+          value={activeShopsCount.toString()}
+          subtitle="Ordering enabled"
+          icon={CheckCircle2}
+          iconColor="emerald"
+          isLoading={loading}
+        />
 
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Pending Approval</span>
-            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{pendingShopsCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Awaiting KYC verification</div>
-        </Card>
+        <KPICard
+          title="Pending Approval"
+          value={pendingShopsCount.toString()}
+          subtitle="Awaiting KYC verification"
+          icon={AlertTriangle}
+          iconColor="amber"
+          badge={pendingShopsCount > 0 ? `${pendingShopsCount} New` : undefined}
+          isLoading={loading}
+        />
 
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Total Udhaar / Credit</span>
-            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
-              <Scale className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
-            ₹{totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Outstanding retailer debt</div>
-        </Card>
+        <KPICard
+          title="Total Udhaar / Credit"
+          value={`₹${totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+          subtitle="Outstanding retailer debt"
+          icon={Scale}
+          iconColor="purple"
+          isLoading={loading}
+        />
       </div>
 
       {/* Tabs */}

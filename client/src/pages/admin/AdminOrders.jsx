@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
+import KPICard from '../../components/common/KPICard';
+import Timeline from '../../components/common/Timeline';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
@@ -349,52 +351,43 @@ export const AdminOrders = () => {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Orders</span>
-            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-              <ShoppingCart className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{totalOrdersCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Lifetime platform volume</div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          title="Total Orders"
+          value={totalOrdersCount.toString()}
+          subtitle="Lifetime platform volume"
+          icon={ShoppingCart}
+          iconColor="indigo"
+          isLoading={loading}
+        />
 
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Action Required</span>
-            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{pendingOrdersCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Awaiting order confirmation</div>
-        </Card>
+        <KPICard
+          title="Action Required"
+          value={pendingOrdersCount.toString()}
+          subtitle="Awaiting warehouse confirmation"
+          icon={Clock}
+          iconColor="amber"
+          badge={pendingOrdersCount > 0 ? `${pendingOrdersCount} Pending` : undefined}
+          isLoading={loading}
+        />
 
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">In Fulfillment</span>
-            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
-              <Truck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">{inTransitCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Packing & on logistics route</div>
-        </Card>
+        <KPICard
+          title="In Fulfillment"
+          value={inTransitCount.toString()}
+          subtitle="Packing & on logistics route"
+          icon={Truck}
+          iconColor="purple"
+          isLoading={loading}
+        />
 
-        <Card className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gross Value</span>
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            ₹{totalSalesVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="text-xs text-slate-500 mt-1">Total revenue committed</div>
-        </Card>
+        <KPICard
+          title="Gross Order Value"
+          value={`₹${totalSalesVolume.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+          subtitle="Total revenue committed"
+          icon={DollarSign}
+          iconColor="emerald"
+          isLoading={loading}
+        />
       </div>
 
       {/* Status Filter Tabs */}
@@ -723,25 +716,18 @@ export const AdminOrders = () => {
             {selectedOrder.history && selectedOrder.history.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                  Order Status Audit Trail
+                  Order Status Audit Trail & Lifecycle
                 </h4>
-                <div className="space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-800/30">
-                  {selectedOrder.history.map((h, i) => (
-                    <div key={i} className="flex items-start gap-2.5 text-xs">
-                      <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold uppercase text-slate-900 dark:text-white">
-                            {h.new_status}
-                          </span>
-                          <span className="text-slate-400">
-                            {new Date(h.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} • {new Date(h.created_at).toLocaleDateString('en-IN')}
-                          </span>
-                        </div>
-                        {h.notes && <p className="text-slate-500 dark:text-slate-400 mt-0.5">{h.notes}</p>}
-                      </div>
-                    </div>
-                  ))}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-850/50">
+                  <Timeline
+                    items={selectedOrder.history.map((h, i) => ({
+                      id: h.id || i,
+                      title: `Status: ${(h.new_status || 'updated').toUpperCase()}`,
+                      description: h.notes || 'Status transitioned by warehouse operator',
+                      timestamp: h.created_at ? new Date(h.created_at).toLocaleString('en-IN') : '',
+                      status: h.new_status === 'delivered' ? 'completed' : h.new_status === 'cancelled' ? 'failed' : i === selectedOrder.history.length - 1 ? 'current' : 'completed',
+                    }))}
+                  />
                 </div>
               </div>
             )}

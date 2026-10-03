@@ -4,10 +4,11 @@ import {
   DollarSign, ShoppingCart, Store, AlertTriangle, ArrowRight,
   Plus, RefreshCw, Clock, CheckCircle2, Truck, FileText,
   TrendingUp, Layers, Package, Users, BarChart3, ArrowUpRight,
-  ShieldCheck, CreditCard, ChevronRight, Eye
+  ShieldCheck, CreditCard, ChevronRight, Eye, Warehouse, Sparkles
 } from 'lucide-react';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
+import KPICard from '../../components/common/KPICard';
 import Button from '../../components/common/Button';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingState from '../../components/common/LoadingState';
@@ -86,24 +87,24 @@ export const AdminDashboard = () => {
   const maxSale = Math.max(...salesTrend.map((s) => parseFloat(s.total_revenue || 0)), 1000);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Top Banner: Central Warehouse Hub Console */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200/50 dark:border-brand-800/50">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
-              Central Warehouse: PURVAJ_CENTRAL_01
+              Central Hub: PURVAJ_MAIN_01
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              Live Database Active
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+              Live Network Active
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Wholesale Operations Dashboard
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Wholesale Operations Center
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Real-time B2B overview of sales velocity, retailer pipeline, inventory alerts, and dispatch status.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+            Real-time multi-shop order queue, warehouse fulfillment pipeline, sales velocity, and inventory alerts.
           </p>
         </div>
 
@@ -129,153 +130,150 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Top KPI Cards (5 Cards) */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        {/* Total Sales */}
-        <Card className="p-4 border-l-4 border-l-emerald-500 hover:shadow-soft-md transition-shadow">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Total Sales</span>
-            <DollarSign className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">
-            ₹{stats.totalSales.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </div>
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" />
-            <span>Today: ₹{stats.todaySales.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <KPICard
+          title="Total Wholesale Sales"
+          value={`₹${stats.totalSales.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+          subtitle={`Today: ₹${stats.todaySales.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+          icon={DollarSign}
+          iconColor="emerald"
+          trend="+12%"
+          trendDirection="up"
+          isLoading={loading}
+          onClick={() => navigate('/admin/billing')}
+        />
 
-        {/* Total Orders */}
-        <Card className="p-4 border-l-4 border-l-brand-500 hover:shadow-soft-md transition-shadow">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Total Orders</span>
-            <ShoppingCart className="w-4 h-4 text-brand-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">
-            {stats.totalOrders}
-          </div>
-          <div className="text-[11px] text-brand-600 dark:text-brand-400 mt-1 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>{stats.pendingOrders} Pending Fulfillment</span>
-          </div>
-        </Card>
+        <KPICard
+          title="Total Orders"
+          value={stats.totalOrders.toString()}
+          subtitle={`${stats.pendingOrders} Pending Fulfillment`}
+          icon={ShoppingCart}
+          iconColor="brand"
+          badge={stats.pendingOrders > 0 ? `${stats.pendingOrders} Action Req.` : 'All clear'}
+          isLoading={loading}
+          onClick={() => navigate('/admin/orders')}
+        />
 
-        {/* Active Shops */}
-        <Card className="p-4 border-l-4 border-l-sky-500 hover:shadow-soft-md transition-shadow">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Active Retailers</span>
-            <Store className="w-4 h-4 text-sky-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">
-            {stats.activeShops}
-          </div>
-          <div className="text-[11px] text-sky-600 dark:text-sky-400 mt-1 flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            <span>{stats.pendingShops} Pending Approval</span>
-          </div>
-        </Card>
+        <KPICard
+          title="Active Retailers"
+          value={stats.activeShops.toString()}
+          subtitle={`${stats.pendingShops} Pending KYC Review`}
+          icon={Store}
+          iconColor="indigo"
+          badge={stats.pendingShops > 0 ? `${stats.pendingShops} New` : undefined}
+          isLoading={loading}
+          onClick={() => navigate('/admin/shops')}
+        />
 
-        {/* Low Stock Alerts */}
-        <Card className="p-4 border-l-4 border-l-amber-500 hover:shadow-soft-md transition-shadow">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Low Stock</span>
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">
-            {stats.lowStockCount}
-          </div>
-          <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-            <span>Critical warehouse replenishment</span>
-          </div>
-        </Card>
+        <KPICard
+          title="Low Stock Items"
+          value={stats.lowStockCount.toString()}
+          subtitle="Warehouse replenishment needed"
+          icon={AlertTriangle}
+          iconColor={stats.lowStockCount > 0 ? 'amber' : 'brand'}
+          trendDirection={stats.lowStockCount > 0 ? 'down' : 'neutral'}
+          isLoading={loading}
+          onClick={() => navigate('/admin/inventory')}
+        />
 
-        {/* Pending Invoices / Payments */}
-        <Card className="p-4 border-l-4 border-l-purple-500 hover:shadow-soft-md transition-shadow col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Outstanding Credit</span>
-            <CreditCard className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">
-            15 Days
-          </div>
-          <div className="text-[11px] text-purple-600 dark:text-purple-400 mt-1 flex items-center gap-1">
-            <span>Standard payment terms active</span>
-          </div>
-        </Card>
+        <KPICard
+          title="Outstanding Credit"
+          value="15 Days"
+          subtitle="Avg payment cycle terms"
+          icon={CreditCard}
+          iconColor="purple"
+          isLoading={loading}
+          onClick={() => navigate('/admin/payments')}
+        />
       </div>
 
       {/* Quick Action Navigation Bar */}
-      <Card className="p-4 bg-slate-50/70 dark:bg-slate-800/40">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-            Quick Actions
-          </span>
-          <span className="text-[11px] text-slate-400">Common Wholesale Workflows</span>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-soft">
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-brand-500" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Quick Operations & Shortcuts
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400">Direct Enterprise Workflows</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <button
             type="button"
             onClick={() => navigate('/admin/products')}
-            className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:shadow-soft-sm transition-all text-left group"
+            className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 hover:border-brand-500 hover:bg-white dark:hover:bg-slate-850 hover:shadow-soft-sm transition-all text-left group"
           >
-            <Package className="w-5 h-5 text-brand-500 mb-1.5 group-hover:scale-110 transition-transform" />
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">Add Product</div>
-            <div className="text-[10px] text-slate-400">Catalog item</div>
+            <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 w-fit mb-2 group-hover:scale-110 transition-transform">
+              <Package className="w-4 h-4" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">Add Product</div>
+            <div className="text-[10px] text-slate-400">Wholesale catalog</div>
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/admin/billing')}
-            className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:shadow-soft-sm transition-all text-left group"
+            className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 hover:border-emerald-500 hover:bg-white dark:hover:bg-slate-850 hover:shadow-soft-sm transition-all text-left group"
           >
-            <FileText className="w-5 h-5 text-emerald-500 mb-1.5 group-hover:scale-110 transition-transform" />
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">Create Invoice</div>
-            <div className="text-[10px] text-slate-400">Tax bill generation</div>
+            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 w-fit mb-2 group-hover:scale-110 transition-transform">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">Create Invoice</div>
+            <div className="text-[10px] text-slate-400">GST tax bill</div>
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/admin/shops')}
-            className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:shadow-soft-sm transition-all text-left group"
+            className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 hover:border-sky-500 hover:bg-white dark:hover:bg-slate-850 hover:shadow-soft-sm transition-all text-left group"
           >
-            <Store className="w-5 h-5 text-sky-500 mb-1.5 group-hover:scale-110 transition-transform" />
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">Shops & KYC</div>
-            <div className="text-[10px] text-slate-400">Approve retailer</div>
+            <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 w-fit mb-2 group-hover:scale-110 transition-transform">
+              <Store className="w-4 h-4" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">Shops & KYC</div>
+            <div className="text-[10px] text-slate-400">Review retailers</div>
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/admin/orders')}
-            className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:shadow-soft-sm transition-all text-left group"
+            className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 hover:border-amber-500 hover:bg-white dark:hover:bg-slate-850 hover:shadow-soft-sm transition-all text-left group"
           >
-            <ShoppingCart className="w-5 h-5 text-amber-500 mb-1.5 group-hover:scale-110 transition-transform" />
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">View Orders</div>
+            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 w-fit mb-2 group-hover:scale-110 transition-transform">
+              <ShoppingCart className="w-4 h-4" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">View Orders</div>
             <div className="text-[10px] text-slate-400">Fulfillment queue</div>
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/admin/inventory')}
-            className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:shadow-soft-sm transition-all text-left group"
+            className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 hover:border-purple-500 hover:bg-white dark:hover:bg-slate-850 hover:shadow-soft-sm transition-all text-left group"
           >
-            <Layers className="w-5 h-5 text-purple-500 mb-1.5 group-hover:scale-110 transition-transform" />
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">Stock Update</div>
-            <div className="text-[10px] text-slate-400">Warehouse inward</div>
+            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 w-fit mb-2 group-hover:scale-110 transition-transform">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">Stock Inward</div>
+            <div className="text-[10px] text-slate-400">Inventory counts</div>
           </button>
 
           <button
             type="button"
             onClick={() => navigate('/admin/reports')}
-            className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:shadow-soft-sm transition-all text-left group"
+            className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 hover:border-indigo-500 hover:bg-white dark:hover:bg-slate-850 hover:shadow-soft-sm transition-all text-left group"
           >
-            <BarChart3 className="w-5 h-5 text-indigo-500 mb-1.5 group-hover:scale-110 transition-transform" />
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">Reports</div>
+            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 w-fit mb-2 group-hover:scale-110 transition-transform">
+              <BarChart3 className="w-4 h-4" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">Reports</div>
             <div className="text-[10px] text-slate-400">Sales & analytics</div>
           </button>
         </div>
-      </Card>
+      </div>
 
-      {/* Middle Section: Visual Trend Charts */}
+      {/* Middle Section: Visual Trend Charts & Fast Moving Items */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 7-Day Revenue Trend Chart (2 Cols) */}
         <Card className="lg:col-span-2 p-5">
@@ -363,7 +361,7 @@ export const AdminDashboard = () => {
                     <div className="font-bold text-slate-900 dark:text-white">
                       {p.total_quantity_sold} Units
                     </div>
-                    <div className="text-[10px] text-emerald-600">
+                    <div className="text-[10px] text-emerald-600 font-semibold">
                       ₹{parseFloat(p.total_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
                   </div>
@@ -438,7 +436,7 @@ export const AdminDashboard = () => {
                         <StatusBadge status={o.order_status} />
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <span className="text-brand-600 hover:underline inline-flex items-center gap-0.5">
+                        <span className="text-brand-600 hover:underline inline-flex items-center gap-0.5 font-semibold">
                           <span>Process</span>
                           <ChevronRight className="w-3 h-3" />
                         </span>
@@ -488,7 +486,7 @@ export const AdminDashboard = () => {
                     <div className="font-bold text-slate-900 dark:text-white">
                       ₹{parseFloat(shop.lifetime_spend || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
-                    <div className="text-[10px] text-brand-600">
+                    <div className="text-[10px] text-brand-600 font-semibold">
                       Credit: ₹{parseFloat(shop.credit_limit || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
                   </div>
@@ -501,17 +499,17 @@ export const AdminDashboard = () => {
 
       {/* Critical Stock Replenishment Alert Bar */}
       {lowStockItems.length > 0 && (
-        <Card className="p-4 bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60">
+        <Card className="p-4 bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 shadow-soft-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center flex-shrink-0 shadow-soft-2xs">
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
                   Warehouse Stock Replenishment Alert ({lowStockItems.length} Products Low)
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                   {lowStockItems.slice(0, 3).map((item) => `${item.product_name} (${item.available_stock} left)`).join(', ')}
                 </div>
               </div>
@@ -521,7 +519,7 @@ export const AdminDashboard = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate('/admin/inventory')}
-              className="border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex-shrink-0"
+              className="border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex-shrink-0 bg-white/70 dark:bg-slate-900/70"
             >
               Manage Stock Inward →
             </Button>
